@@ -1,0 +1,33 @@
+# End-to-end demo (Compose)
+
+A self-contained stack that needs **no real PPDM hardware**:
+
+```
+mockppdm → ppdm_exporter → Prometheus → Grafana
+```
+
+`cmd/mockppdm` is a tiny fake PPDM server that serves canned fixtures over self-signed TLS
+(bearer login + the six list endpoints), so the dashboard populates immediately.
+
+## Run
+
+```bash
+make demo            # docker compose up --build
+```
+
+| Service | URL | Notes |
+|---|---|---|
+| Grafana | <http://localhost:3000> | `admin` / `admin` → *PowerProtect Data Manager — Overview* |
+| Prometheus | <http://localhost:9090> | target `ppdm_exporter` should be **up** |
+| Exporter | <http://localhost:9102/metrics> | raw metrics |
+
+Tear down:
+
+```bash
+make demo-down       # docker compose down --remove-orphans
+```
+
+## What you should see
+
+`ppdm_up = 1`, activity/asset/alert/capacity panels populated, and the *Assets at risk*
+panel showing the one stale demo asset (`nas01`) — the bounded SLA-age logic in action.

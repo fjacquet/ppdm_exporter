@@ -1,3 +1,58 @@
+# ppdm_exporter — project guide
+
+A Prometheus + OTLP exporter for Dell PowerProtect Data Manager (PPDM). Member of the
+family standardized by the `exporter-standards` skill; mirrors the hand-rolled sibling
+`ppdd_exporter` and `pflex_exporter`'s OTLP path.
+
+## Commands
+
+```bash
+make ci        # the gate: gofmt, vet, golangci-lint, go test -race, govulncheck, build
+make sure      # quick local gate: fmt, vet, test, build
+make test      # unit tests          make cli     # build bin/ppdm_exporter
+make demo      # docker-compose: mockppdm -> exporter -> Prometheus -> Grafana
+make release-snapshot   # GoReleaser dry-run
+```
+
+## Architecture
+
+Snapshot collection model. A background loop (`internal/ppdm/collector.go`) logs into each
+configured server, runs four modular `ResourceCollector`s in parallel, and pointer-swaps an
+immutable `Snapshot` into a `SnapshotStore`. Both export paths read the snapshot:
+`internal/ppdm/prometheus.go` (unchecked collector) and `internal/ppdm/otlp.go` (observable
+gauges). Client + auth + pagination live in `internal/ppdmclient`. See `docs/adr/`.
+
+- Collectors: `activities.go`, `assets.go`, `capacity.go`, `health.go` — each owns one
+  endpoint + JSON struct so provisional-API risk is localized.
+- `internal/config` — YAML load, `${ENV}`/`passwordFile`, SIGHUP + fsnotify hot reload.
+- `cmd/mockppdm` — fake PPDM server (fixtures over TLS) for the demo stack.
+
+## Load-bearing constraints
+
+- **API shapes are provisional** — modeled from the 19.22.0 reference, cross-checked vs the
+  Apache-2.0 `dell/powerprotect-data-manager` module. Every unverified field is tagged
+  `// provisional`; `grep -rn provisional internal/` is the validation surface (ADR-0009).
+  One struct + one fixture per shape: fixing a wrong field touches one file.
+- **Label-key invariant**: one ordered label-key set per metric name; rollups pad empty
+  values; per-object metrics get their own name. Enforced by `internal/ppdm/labels_test.go`.
+- **Retry excludes 4xx**; re-login on expiry + 401. **Serve HTTP before first collect.**
+- **No inline semgrep/lint suppressions** — restructure (e.g. `writeBytes(io.Writer, …)`).
+- Per-second/windowed values are **gauges**, aggregated with `sum`/`max`, never `rate()`.
+
+## Testing
+
+TDD. Collectors are driven by the in-memory `ppdmclient.Mock`; client/auth/pagination by
+`httptest`. Assert via both the Prometheus registry and an OTLP `ManualReader`. Keep
+semgrep + golangci-lint clean.
+
+## CI/CD
+
+CI trio (`.github/workflows/ci.yml|release.yml|docs.yml`), SHA-pinned actions + dependabot,
+GoReleaser v2 (binaries + CycloneDX SBOM + Homebrew cask), multi-arch GHCR image with
+attestations, MkDocs Material → GitHub Pages. Everything CI runs is a Makefile target.
+
+---
+
 <!-- rtk-instructions v2 -->
 # RTK (Rust Token Killer) - Token-Optimized Commands
 
