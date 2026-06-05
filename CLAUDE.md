@@ -27,6 +27,17 @@ gauges). Client + auth + pagination live in `internal/ppdmclient`. See `docs/adr
 - `internal/config` — YAML load, `${ENV}`/`passwordFile`, SIGHUP + fsnotify hot reload.
 - `cmd/mockppdm` — fake PPDM server (fixtures over TLS) for the demo stack.
 
+### cmd/report (backup history — assurance reporter Phase 1)
+
+A second binary capturing authoritative PPDM records (activities/copies/assets/policies)
+into PostgreSQL for assurance reporting. Reuses the shared `internal/ppdmclient.GetAll`
+(no client change) + `internal/config` (`LoadReport`); `internal/report` holds the capture
+DTOs, the `pgx` `Store` (embedded `migrations.sql`, idempotent upserts, watermark, prune,
+`capture_runs` provenance), and the `Capturer` loop. DB tests use `testcontainers-go`
+(skipped in `-short`). Grafana reads Postgres directly (BackupHistory datasource) for the
+global-search view. No crypto/audit machinery (assurance, not forensic). The exporter binary
+and image are untouched.
+
 ## Load-bearing constraints
 
 - **API shapes are provisional** — modeled from the 19.22.0 reference, cross-checked vs the

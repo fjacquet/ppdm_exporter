@@ -23,5 +23,11 @@ All notable changes to this project are documented here. The format is based on
 - Opt-in per-job activity metrics (`collection.perJobActivities`): `ppdm_activity_info`,
   `ppdm_activity_job_bytes`, `ppdm_activity_job_duration_seconds` — off by default (cardinality).
 
+- `cmd/report` (backup-assurance reporter, Phase 1): durable PPDM backup-history capture
+  (activities/copies/assets/policies) into PostgreSQL — incremental watermark, retention
+  prune, `capture_runs` provenance, tenant tagging — plus a Grafana **Backup History**
+  view over Postgres. Reuses the shared PPDM client; exporter binary unchanged.
+
 ### Deferred
 - OTLP trace spans (diagnostic tracer manager) — metrics OTLP shipped; tracing is a follow-up.
+- Backup reporter Phases 2–4 (SLA evaluation, branded PDF/HTML report, scheduling/delivery).

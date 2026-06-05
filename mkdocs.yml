@@ -17,6 +17,7 @@ nav:
       - Configuration: getting-started/configuration.md
       - Quick start: getting-started/quickstart.md
   - Metrics reference: metrics.md
+  - Backup history (cmd/report): report.md
   - Deployment:
       - Docker: deployment/docker.md
       - End-to-end demo (Compose): deployment/compose-demo.md
