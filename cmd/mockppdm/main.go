@@ -26,12 +26,14 @@ var fixtures embed.FS
 // routes maps an exporter request path to its embedded fixture file. PPDM list
 // endpoints carry ?page=/?filter= query strings, which ServeMux ignores when matching.
 var routes = map[string]string{
-	"/api/v2/activities":        "fixtures/activities.json",
-	"/api/v2/assets":            "fixtures/assets.json",
-	"/api/v2/datadomain-mtrees": "fixtures/datadomain-mtrees.json",
-	"/api/v2/storage-systems":   "fixtures/storage-systems.json",
-	"/api/v3/health-entities":   "fixtures/health-entities.json",
-	"/api/v2/alerts":            "fixtures/alerts.json",
+	"/api/v2/activities":          "fixtures/activities.json",
+	"/api/v2/assets":              "fixtures/assets.json",
+	"/api/v2/datadomain-mtrees":   "fixtures/datadomain-mtrees.json",
+	"/api/v2/storage-systems":     "fixtures/storage-systems.json",
+	"/api/v3/health-entities":     "fixtures/health-entities.json",
+	"/api/v2/alerts":              "fixtures/alerts.json",
+	"/api/v2/copies":              "fixtures/copies.json",
+	"/api/v3/protection-policies": "fixtures/protection-policies.json",
 }
 
 const mockToken = "mockppdm-access-token"

@@ -1,0 +1,4 @@
+{"page":{"number":0,"totalPages":1},"content":[
+  {"id":"c-1","assetId":"v1","policyName":"Gold-VM","copyType":"FULL","createTime":"2026-06-05T01:04:00Z","retentionTime":"2026-07-05T01:04:00Z","retentionLock":true,"storageSystemId":"ddve-01","location":"ddve-01","size":1048576},
+  {"id":"c-2","assetId":"f1","policyName":"FS-Weekly","copyType":"FULL","createTime":"2026-06-04T01:00:00Z","retentionTime":"2026-09-04T01:00:00Z","retentionLock":false,"storageSystemId":"ddve-01","location":"ddve-01","size":2148073472}
+]}
