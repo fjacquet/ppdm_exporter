@@ -22,7 +22,7 @@ func TestWatcherEmitsReloadedConfig(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer w.Close()
+	defer func() { _ = w.Close() }()
 
 	write("9103")
 	w.Trigger() // simulate SIGHUP without sending a real signal

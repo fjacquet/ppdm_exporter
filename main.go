@@ -127,7 +127,7 @@ func run(cfgPath string, once, debug bool) error {
 	if w, werr := config.NewWatcher(cfgPath); werr != nil {
 		log.WithError(werr).Warn("config hot-reload disabled")
 	} else {
-		defer w.Close()
+		defer func() { _ = w.Close() }()
 		go func() {
 			for {
 				select {

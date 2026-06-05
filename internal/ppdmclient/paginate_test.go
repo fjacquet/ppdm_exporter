@@ -26,7 +26,7 @@ func TestGetAllWalksPages(t *testing.T) {
 	srv := httptest.NewTLSServer(mux)
 	defer srv.Close()
 	c := NewServerClient(Config{Name: "ppdm01", BaseURL: srv.URL, HTTPClient: srv.Client()})
-	defer c.Close()
+	defer func() { _ = c.Close() }()
 
 	type asset struct {
 		ID string `json:"id"`
@@ -55,7 +55,7 @@ func TestGetAllAppendsToExistingQuery(t *testing.T) {
 	srv := httptest.NewTLSServer(mux)
 	defer srv.Close()
 	c := NewServerClient(Config{Name: "ppdm01", BaseURL: srv.URL, HTTPClient: srv.Client()})
-	defer c.Close()
+	defer func() { _ = c.Close() }()
 
 	type act struct{}
 	path := "/api/v2/activities?filter=" + url.QueryEscape(`createdAt ge "x"`)

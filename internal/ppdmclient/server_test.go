@@ -40,7 +40,7 @@ func TestServerClientAuthAndGet(t *testing.T) {
 		Name: "ppdm01", BaseURL: srv.URL, Username: "u", Password: "p",
 		InsecureSkipVerify: true, HTTPClient: srv.Client(),
 	})
-	defer c.Close()
+	defer func() { _ = c.Close() }()
 
 	var out struct {
 		Content []struct {
@@ -85,7 +85,7 @@ func TestServerClientReloginOn401(t *testing.T) {
 	defer srv.Close()
 
 	c := NewServerClient(Config{Name: "ppdm01", BaseURL: srv.URL, HTTPClient: srv.Client()})
-	defer c.Close()
+	defer func() { _ = c.Close() }()
 	var out map[string]any
 	if err := c.Get(context.Background(), "/api/v2/activities", &out); err != nil {
 		t.Fatalf("Get: %v", err)
