@@ -54,6 +54,22 @@ func run(cfgPath string, once, debug bool) error {
 
 	store := ppdm.NewSnapshotStore()
 
+	// Optional OTLP metric export (dual export alongside /metrics).
+	var otlpExp *ppdm.OTLPExporter
+	if cfg.OTel.Enabled {
+		e, oerr := ppdm.NewOTLPExporter(ctx, cfg.OTel.Endpoint, cfg.OTel.Insecure, cfg.OTel.Interval, store, version)
+		if oerr != nil {
+			log.WithError(oerr).Warn("OTLP export disabled")
+		} else {
+			otlpExp = e
+			defer func() {
+				sctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+				defer cancel()
+				_ = otlpExp.Shutdown(sctx)
+			}()
+		}
+	}
+
 	reg := prometheus.NewRegistry()
 	reg.MustRegister(ppdm.NewPromCollector(store))
 	mux := http.NewServeMux()
@@ -91,6 +107,11 @@ func run(cfgPath string, once, debug bool) error {
 			store, c.Collection.Interval, c.Collection.Timeout)
 		log.Info("running collection cycle")
 		col.CollectOnce(ctx)
+		if otlpExp != nil {
+			if err := otlpExp.EnsureInstruments(); err != nil {
+				log.WithError(err).Warn("OTLP instrument registration failed")
+			}
+		}
 		lctx, cancel := context.WithCancel(ctx)
 		activeClients, activeCancel = clients, cancel
 		if !once {
