@@ -1,0 +1,22 @@
+---
+server:
+  host: "0.0.0.0"
+  port: "9102"
+  uri: "/metrics"
+collection:
+  interval: "5m"
+  timeout: "60s"
+  lookback: "24h"
+  assetAgeThreshold: "24h"
+otel:
+  enabled: false
+  endpoint: "localhost:4317"
+  insecure: true
+  interval: "30s"
+servers:
+  - name: ppdm-prod-01
+    host: ppdm01.example.com
+    port: 8443
+    username: ppdm-monitor
+    password: "${PPDM01_PASSWORD}"
+    insecureSkipVerify: true

@@ -33,8 +33,8 @@ func TestCapacityCollect(t *testing.T) {
 		"ppdm_storage_unit_physical_capacity_bytes|/data/col1/su-policy-a|": 3220957036544,
 		"ppdm_storage_unit_physical_used_bytes|/data/col1/su-policy-a|":     342523641856,
 		"ppdm_storage_unit_logical_used_bytes|/data/col1/su-policy-a|":      1099511627776,
-		"ppdm_storage_system_total_bytes||ddve-01":                         3220957036544,
-		"ppdm_storage_system_used_bytes||ddve-01":                          342523641856,
+		"ppdm_storage_system_total_bytes||ddve-01":                          3220957036544,
+		"ppdm_storage_system_used_bytes||ddve-01":                           342523641856,
 	}
 	for k, v := range want {
 		if seen[k] != v {
