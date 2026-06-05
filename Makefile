@@ -58,6 +58,13 @@ run-cli: cli
 docker:
 	docker build -t ppdm_exporter:$(VERSION) .
 
+# End-to-end demo stack: mockppdm -> exporter -> Prometheus -> Grafana.
+# Grafana: http://localhost:3000 (admin/admin). Requires a running Docker daemon.
+demo:
+	docker compose up --build
+demo-down:
+	docker compose down --remove-orphans
+
 # CycloneDX SBOM for the Go module (source/dependency SBOM).
 sbom:
 	@mkdir -p $(DIST)

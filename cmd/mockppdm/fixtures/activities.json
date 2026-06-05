@@ -1,0 +1,8 @@
+{
+  "page": {"number": 0, "totalPages": 1},
+  "content": [
+    {"id":"1","category":"PROTECT","state":"COMPLETED","result":{"status":"SUCCESS","bytesTransferred":1048576}},
+    {"id":"2","category":"PROTECT","state":"COMPLETED","result":{"status":"FAILED","bytesTransferred":0}},
+    {"id":"3","category":"RESTORE","state":"RUNNING","result":{"status":"OK","bytesTransferred":524288}}
+  ]
+}

@@ -1,0 +1,60 @@
+---
+# End-to-end demo stack — exporter BUILT FROM SOURCE.
+#   docker compose up --build      (or: make demo)
+# Then open Grafana at http://localhost:3000 (admin/admin) -> "PowerProtect Data Manager — Overview".
+#
+# Services: mockppdm (fake PPDM server) -> ppdm_exporter -> prometheus -> grafana.
+# mockppdm serves demo fixtures so the dashboard populates without real hardware.
+services:
+  mockppdm:
+    build:
+      context: .
+      dockerfile: deploy/mockppdm/Dockerfile
+    image: ppdm_mockppdm
+    pull_policy: build
+    container_name: ppdm_mockppdm
+    restart: unless-stopped
+
+  ppdm_exporter:
+    build: .
+    image: ppdm_exporter
+    # Build-only image (no registry). Without this, `docker compose up` tries to pull
+    # `ppdm_exporter` from Docker Hub and fails with access-denied.
+    pull_policy: build
+    container_name: ppdm_exporter
+    command: ["--config", "/etc/ppdm_exporter/config.yaml"]
+    ports:
+      - "9102:9102"
+    volumes:
+      - ./config.demo.yaml:/etc/ppdm_exporter/config.yaml:ro
+    depends_on:
+      - mockppdm
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: ppdm_prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    depends_on:
+      - ppdm_exporter
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: ppdm_grafana
+    ports:
+      - "3000:3000"
+    environment:
+      # Test-stack credentials (admin / admin). Change for anything non-local.
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+    restart: unless-stopped

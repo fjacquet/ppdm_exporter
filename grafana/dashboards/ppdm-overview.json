@@ -1,0 +1,83 @@
+{
+  "annotations": {"list": []},
+  "editable": true,
+  "graphTooltip": 0,
+  "title": "PowerProtect Data Manager — Overview",
+  "uid": "ppdm-overview",
+  "tags": ["ppdm"],
+  "timezone": "",
+  "schemaVersion": 39,
+  "version": 1,
+  "time": {"from": "now-6h", "to": "now"},
+  "templating": {
+    "list": [
+      {
+        "name": "server",
+        "type": "query",
+        "datasource": {"type": "prometheus", "uid": "prometheus"},
+        "query": "label_values(ppdm_up, server)",
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true
+      }
+    ]
+  },
+  "panels": [
+    {
+      "title": "Server up",
+      "type": "stat",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
+      "fieldConfig": {"defaults": {"mappings": [{"type": "value", "options": {"0": {"text": "DOWN", "color": "red"}, "1": {"text": "UP", "color": "green"}}}]}},
+      "targets": [{"expr": "ppdm_up{server=~\"$server\"}", "legendFormat": "{{server}}"}]
+    },
+    {
+      "title": "Unprotected assets",
+      "type": "stat",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0},
+      "targets": [{"expr": "sum(ppdm_asset_unprotected{server=~\"$server\"})", "legendFormat": "unprotected"}]
+    },
+    {
+      "title": "Open alerts by severity",
+      "type": "stat",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 4, "w": 12, "x": 12, "y": 0},
+      "targets": [{"expr": "sum by (severity) (ppdm_alert_count{server=~\"$server\"})", "legendFormat": "{{severity}}"}]
+    },
+    {
+      "title": "Backup activity outcomes (24h window)",
+      "type": "timeseries",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4},
+      "targets": [{"expr": "sum by (category, result_status) (ppdm_activity_count{server=~\"$server\"})", "legendFormat": "{{category}} / {{result_status}}"}]
+    },
+    {
+      "title": "Activity data transferred (bytes, 24h window)",
+      "type": "timeseries",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4},
+      "fieldConfig": {"defaults": {"unit": "bytes"}},
+      "targets": [{"expr": "sum by (category) (ppdm_activity_bytes_total{server=~\"$server\"})", "legendFormat": "{{category}}"}]
+    },
+    {
+      "title": "Storage-system capacity (used / total)",
+      "type": "timeseries",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 12},
+      "fieldConfig": {"defaults": {"unit": "bytes"}},
+      "targets": [
+        {"expr": "ppdm_storage_system_used_bytes{server=~\"$server\"}", "legendFormat": "{{storage_system}} used"},
+        {"expr": "ppdm_storage_system_total_bytes{server=~\"$server\"}", "legendFormat": "{{storage_system}} total"}
+      ]
+    },
+    {
+      "title": "Assets at risk — last copy age (seconds)",
+      "type": "timeseries",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 12},
+      "fieldConfig": {"defaults": {"unit": "s"}},
+      "targets": [{"expr": "ppdm_asset_last_copy_age_seconds{server=~\"$server\"}", "legendFormat": "{{asset}} ({{protection_status}})"}]
+    }
+  ]
+}

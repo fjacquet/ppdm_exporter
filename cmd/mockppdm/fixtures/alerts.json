@@ -1,0 +1,5 @@
+{"page":{"number":0,"totalPages":1},"content":[
+  {"severity":"CRITICAL","category":"PROTECT","acknowledgement":{"acknowledgeState":"NOT_ACKNOWLEDGED"}},
+  {"severity":"WARNING","category":"SYSTEM","acknowledgement":{"acknowledgeState":"ACKNOWLEDGED"}},
+  {"severity":"CRITICAL","category":"SYSTEM","acknowledgement":{"acknowledgeState":"NOT_ACKNOWLEDGED"}}
+]}

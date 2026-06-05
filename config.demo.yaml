@@ -1,0 +1,21 @@
+---
+# Demo config for the docker-compose stack (mockppdm -> exporter -> Prometheus -> Grafana).
+# Also usable locally: `go run ./cmd/mockppdm &` then `./bin/ppdm_exporter --config config.demo.yaml`.
+server:
+  host: "0.0.0.0"
+  port: "9102"
+  uri: "/metrics"
+collection:
+  interval: "15s"
+  timeout: "30s"
+  lookback: "24h"
+  assetAgeThreshold: "24h"
+otel:
+  enabled: false
+servers:
+  - name: mock-ppdm-01
+    host: mockppdm
+    port: 8443
+    username: demo
+    password: demo
+    insecureSkipVerify: true
