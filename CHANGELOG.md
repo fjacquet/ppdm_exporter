@@ -18,6 +18,10 @@ All notable changes to this project are documented here. The format is based on
 - Dual export: unchecked Prometheus collector + OTLP observable-gauge exporter.
 - YAML config with `${ENV}` interpolation, `passwordFile`, and SIGHUP + fsnotify hot reload.
 - CLI (`--config/--once/--debug`) serving HTTP before the first collection cycle, with `/health`.
+- Grafana **Backup Report** dashboard (24h summary: totals, success rate, failures, data
+  volume, trend) plus a per-job detail table.
+- Opt-in per-job activity metrics (`collection.perJobActivities`): `ppdm_activity_info`,
+  `ppdm_activity_job_bytes`, `ppdm_activity_job_duration_seconds` — off by default (cardinality).
 
 ### Deferred
 - OTLP trace spans (diagnostic tracer manager) — metrics OTLP shipped; tracing is a follow-up.

@@ -1,0 +1,159 @@
+{
+  "annotations": {"list": []},
+  "editable": true,
+  "graphTooltip": 1,
+  "title": "PowerProtect — Backup Report",
+  "uid": "ppdm-backup-report",
+  "tags": ["ppdm", "dell", "backup", "report"],
+  "timezone": "",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "1m",
+  "time": {"from": "now-24h", "to": "now"},
+  "templating": {
+    "list": [
+      {
+        "name": "server", "label": "PPDM server", "type": "query",
+        "datasource": {"type": "prometheus", "uid": "prometheus"},
+        "query": "label_values(ppdm_up, server)", "refresh": 2,
+        "includeAll": true, "multi": true, "current": {"text": "All", "value": "$__all"}
+      },
+      {
+        "name": "category", "label": "Category", "type": "query",
+        "datasource": {"type": "prometheus", "uid": "prometheus"},
+        "query": "label_values(ppdm_activity_count{server=~\"$server\"}, category)", "refresh": 2,
+        "includeAll": true, "multi": true, "current": {"text": "All", "value": "$__all"}
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1, "type": "stat", "title": "Total jobs",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 4, "w": 4, "x": 0, "y": 0},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value", "graphMode": "area"},
+      "fieldConfig": {"defaults": {"color": {"mode": "fixed", "fixedColor": "blue"}}},
+      "targets": [{"refId": "A", "expr": "sum(ppdm_activity_count{server=~\"$server\", category=~\"$category\"})"}]
+    },
+    {
+      "id": 2, "type": "stat", "title": "Succeeded",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 4, "w": 4, "x": 4, "y": 0},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value", "graphMode": "area"},
+      "fieldConfig": {"defaults": {"color": {"mode": "fixed", "fixedColor": "green"}}},
+      "targets": [{"refId": "A", "expr": "sum(ppdm_activity_count{server=~\"$server\", category=~\"$category\", result_status=~\"SUCCESS|OK\"}) or vector(0)"}]
+    },
+    {
+      "id": 3, "type": "stat", "title": "Failed",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 4, "w": 4, "x": 8, "y": 0},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background", "graphMode": "none"},
+      "fieldConfig": {"defaults": {"thresholds": {"steps": [{"color": "green", "value": null}, {"color": "red", "value": 1}]}}},
+      "targets": [{"refId": "A", "expr": "sum(ppdm_activity_count{server=~\"$server\", category=~\"$category\", result_status=\"FAILED\"}) or vector(0)"}]
+    },
+    {
+      "id": 4, "type": "stat", "title": "Success rate",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 4, "w": 4, "x": 12, "y": 0},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background", "graphMode": "none"},
+      "fieldConfig": {"defaults": {"unit": "percentunit", "min": 0, "max": 1, "thresholds": {"steps": [{"color": "red", "value": null}, {"color": "orange", "value": 0.9}, {"color": "green", "value": 0.99}]}}},
+      "targets": [{"refId": "A", "expr": "sum(ppdm_activity_count{server=~\"$server\", category=~\"$category\", result_status=~\"SUCCESS|OK\"}) / clamp_min(sum(ppdm_activity_count{server=~\"$server\", category=~\"$category\"}), 1)"}]
+    },
+    {
+      "id": 5, "type": "stat", "title": "Data protected",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 4, "w": 4, "x": 16, "y": 0},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value", "graphMode": "area"},
+      "fieldConfig": {"defaults": {"unit": "bytes", "color": {"mode": "fixed", "fixedColor": "purple"}}},
+      "targets": [{"refId": "A", "expr": "sum(ppdm_activity_bytes_total{server=~\"$server\", category=~\"$category\"})"}]
+    },
+    {
+      "id": 6, "type": "stat", "title": "Running / queued",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 4, "w": 4, "x": 20, "y": 0},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value", "graphMode": "none"},
+      "fieldConfig": {"defaults": {"color": {"mode": "fixed", "fixedColor": "blue"}}},
+      "targets": [{"refId": "A", "expr": "sum(ppdm_activity_count{server=~\"$server\", category=~\"$category\", result_status=~\"RUNNING|QUEUED\"}) or vector(0)"}]
+    },
+
+    {
+      "id": 10, "type": "table", "title": "Outcomes by category & status",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 9, "w": 10, "x": 0, "y": 4},
+      "options": {"showHeader": true, "sortBy": [{"displayName": "jobs", "desc": true}]},
+      "fieldConfig": {"defaults": {}, "overrides": [{"matcher": {"id": "byName", "options": "result_status"}, "properties": [{"id": "custom.cellOptions", "value": {"type": "color-text"}}, {"id": "mappings", "value": [{"type": "value", "options": {"FAILED": {"color": "red"}, "SUCCESS": {"color": "green"}, "OK": {"color": "green"}}}]}]}]},
+      "targets": [{"refId": "A", "expr": "sum by (category, result_status) (ppdm_activity_count{server=~\"$server\", category=~\"$category\"})", "format": "table", "instant": true}],
+      "transformations": [{"id": "organize", "options": {"excludeByName": {"Time": true, "__name__": true}, "renameByName": {"Value": "jobs"}}}]
+    },
+    {
+      "id": 11, "type": "gauge", "title": "Success rate",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 9, "w": 4, "x": 10, "y": 4},
+      "fieldConfig": {"defaults": {"unit": "percentunit", "min": 0, "max": 1, "thresholds": {"steps": [{"color": "red", "value": null}, {"color": "orange", "value": 0.9}, {"color": "green", "value": 0.99}]}}},
+      "targets": [{"refId": "A", "expr": "sum(ppdm_activity_count{server=~\"$server\", category=~\"$category\", result_status=~\"SUCCESS|OK\"}) / clamp_min(sum(ppdm_activity_count{server=~\"$server\", category=~\"$category\"}), 1)"}]
+    },
+    {
+      "id": 12, "type": "bargauge", "title": "Failed jobs by category",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 9, "w": 5, "x": 14, "y": 4},
+      "options": {"orientation": "horizontal", "displayMode": "gradient"},
+      "fieldConfig": {"defaults": {"thresholds": {"steps": [{"color": "green", "value": null}, {"color": "red", "value": 1}]}}},
+      "targets": [{"refId": "A", "expr": "sum by (category) (ppdm_activity_count{server=~\"$server\", category=~\"$category\", result_status=\"FAILED\"})", "legendFormat": "{{category}}", "instant": true}]
+    },
+    {
+      "id": 13, "type": "piechart", "title": "Data protected by category",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 9, "w": 5, "x": 19, "y": 4},
+      "options": {"pieType": "donut", "legend": {"displayMode": "table", "placement": "bottom", "values": ["value"]}, "reduceOptions": {"calcs": ["lastNotNull"]}},
+      "fieldConfig": {"defaults": {"unit": "bytes"}},
+      "targets": [{"refId": "A", "expr": "sum by (category) (ppdm_activity_bytes_total{server=~\"$server\", category=~\"$category\"})", "legendFormat": "{{category}}", "instant": true}]
+    },
+
+    {
+      "id": 20, "type": "timeseries", "title": "Backup outcomes over time",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 13},
+      "fieldConfig": {"defaults": {"custom": {"drawStyle": "bars", "fillOpacity": 70, "stacking": {"mode": "normal"}}}, "overrides": [{"matcher": {"id": "byRegexp", "options": ".*FAILED.*"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "red"}}]}, {"matcher": {"id": "byRegexp", "options": ".*(SUCCESS|OK).*"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "green"}}]}]},
+      "options": {"legend": {"displayMode": "table", "placement": "right", "calcs": ["lastNotNull", "max"]}},
+      "targets": [{"refId": "A", "expr": "sum by (result_status) (ppdm_activity_count{server=~\"$server\", category=~\"$category\"})", "legendFormat": "{{result_status}}"}]
+    },
+    {
+      "id": 21, "type": "timeseries", "title": "Data protected over time",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 13},
+      "fieldConfig": {"defaults": {"unit": "bytes", "custom": {"drawStyle": "line", "fillOpacity": 25, "stacking": {"mode": "normal"}}}},
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}},
+      "targets": [{"refId": "A", "expr": "sum by (category) (ppdm_activity_bytes_total{server=~\"$server\", category=~\"$category\"})", "legendFormat": "{{category}}"}]
+    },
+
+    {"id": 30, "type": "row", "title": "Per-job detail (requires perJobActivities: true)", "gridPos": {"h": 1, "w": 24, "x": 0, "y": 21}, "collapsed": false, "panels": []},
+    {
+      "id": 31, "type": "table", "title": "Backup jobs — last window",
+      "description": "One row per activity. Requires collection.perJobActivities=true on the exporter.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 12, "w": 24, "x": 0, "y": 22},
+      "options": {"showHeader": true, "sortBy": [{"displayName": "status", "desc": true}]},
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {"matcher": {"id": "byName", "options": "status"}, "properties": [{"id": "custom.cellOptions", "value": {"type": "color-text"}}, {"id": "mappings", "value": [{"type": "value", "options": {"FAILED": {"color": "red", "index": 0}, "SUCCESS": {"color": "green", "index": 1}, "OK": {"color": "green", "index": 2}, "RUNNING": {"color": "blue", "index": 3}}}]}]},
+          {"matcher": {"id": "byName", "options": "bytes"}, "properties": [{"id": "unit", "value": "bytes"}]},
+          {"matcher": {"id": "byName", "options": "duration"}, "properties": [{"id": "unit", "value": "s"}]}
+        ]
+      },
+      "targets": [
+        {"refId": "A", "expr": "ppdm_activity_info{server=~\"$server\", category=~\"$category\"}", "format": "table", "instant": true},
+        {"refId": "B", "expr": "ppdm_activity_job_bytes{server=~\"$server\"}", "format": "table", "instant": true},
+        {"refId": "C", "expr": "ppdm_activity_job_duration_seconds{server=~\"$server\"}", "format": "table", "instant": true}
+      ],
+      "transformations": [
+        {"id": "joinByField", "options": {"field": "activity_id", "mode": "outer"}},
+        {"id": "organize", "options": {
+          "excludeByName": {"Time 1": true, "Time 2": true, "Time 3": true, "__name__ 1": true, "__name__ 2": true, "__name__ 3": true, "job 1": true, "job 2": true, "job 3": true, "instance 1": true, "instance 2": true, "instance 3": true, "server 2": true, "server 3": true, "activity_id": true, "Value #A": true},
+          "renameByName": {"server 1": "server", "name": "job", "result_status": "status", "Value #B": "bytes", "Value #C": "duration"},
+          "indexByName": {"server 1": 0, "asset": 1, "policy": 2, "category": 3, "subcategory": 4, "status": 5, "duration": 6, "bytes": 7, "name": 8}
+        }}
+      ]
+    }
+  ]
+}

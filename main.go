@@ -103,7 +103,8 @@ func run(cfgPath string, once, debug bool) error {
 
 	startLoop := func(c *config.Config) {
 		clients := buildClients(c)
-		col := ppdm.NewCollector(clients, ppdm.Registry(c.Collection.Lookback, c.Collection.AssetAgeThreshold),
+		col := ppdm.NewCollector(clients,
+			ppdm.Registry(c.Collection.Lookback, c.Collection.AssetAgeThreshold, c.Collection.PerJobActivities),
 			store, c.Collection.Interval, c.Collection.Timeout)
 		log.Info("running collection cycle")
 		col.CollectOnce(ctx)

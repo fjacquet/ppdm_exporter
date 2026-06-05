@@ -12,6 +12,7 @@ collection:
   timeout: "60s"            # per-server cycle timeout
   lookback: "24h"           # activities query window (createdAt ge ...)
   assetAgeThreshold: "24h"  # emit per-asset last-copy-age only past this age
+  perJobActivities: false   # emit per-job activity metrics (backup-report table; higher cardinality)
 otel:
   enabled: false            # set true to push metrics over OTLP gRPC
   endpoint: "localhost:4317"

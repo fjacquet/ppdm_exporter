@@ -10,6 +10,7 @@ collection:
   timeout: "30s"
   lookback: "24h"
   assetAgeThreshold: "24h"
+  perJobActivities: true   # demo: emit per-job detail for the backup report table
 otel:
   enabled: false
 servers:

@@ -8,6 +8,7 @@ collection:
   timeout: "60s"
   lookback: "24h"
   assetAgeThreshold: "24h"
+  perJobActivities: false   # set true for a per-job backup report table (higher cardinality)
 otel:
   enabled: false
   endpoint: "localhost:4317"

@@ -27,6 +27,21 @@ Example alert — backups failing:
 sum by (server) (ppdm_activity_count{category="PROTECT", result_status="FAILED"}) > 0
 ```
 
+### Per-job detail (opt-in)
+
+Set `collection.perJobActivities: true` to additionally emit one series set per job — the
+data behind the *Backup Report* dashboard's per-job table. **Higher cardinality** (≈ one
+info series per job in the window); off by default.
+
+| Metric | Labels | Type | Meaning |
+|---|---|---|---|
+| `ppdm_activity_info` | `server`, `activity_id`, `name`, `category`, `subcategory`, `result_status`, `asset`, `policy` | gauge (`1`) | One row per job; descriptive labels for a report table. |
+| `ppdm_activity_job_bytes` | `server`, `activity_id` | gauge | `result.bytesTransferred` for that job. |
+| `ppdm_activity_job_duration_seconds` | `server`, `activity_id` | gauge | `completedAt − startedAt`; omitted for jobs still running. |
+
+A Grafana table joins these by `activity_id`. The `asset`/`policy`/`startedAt`/`completedAt`
+fields are **provisional** (ADR-0009).
+
 ## Asset protection — `/api/v2/assets`
 
 | Metric | Labels | Type | Meaning |

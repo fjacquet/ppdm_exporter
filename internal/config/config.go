@@ -41,12 +41,14 @@ type ServerHTTP struct {
 }
 
 // Collection holds loop timing. Lookback bounds the activities query window;
-// AssetAgeThreshold gates per-asset last-copy-age emission.
+// AssetAgeThreshold gates per-asset last-copy-age emission; PerJobActivities opts into
+// per-job activity metrics (higher cardinality — one series set per job in the window).
 type Collection struct {
 	Interval          time.Duration `yaml:"interval"`
 	Timeout           time.Duration `yaml:"timeout"`
 	Lookback          time.Duration `yaml:"lookback"`
 	AssetAgeThreshold time.Duration `yaml:"assetAgeThreshold"`
+	PerJobActivities  bool          `yaml:"perJobActivities"`
 }
 
 // OTel configures optional OTLP metric/trace export.

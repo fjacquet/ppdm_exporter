@@ -16,9 +16,9 @@ type ResourceCollector interface {
 }
 
 // Registry is the ordered set of collectors run for every server.
-func Registry(lookback, assetAgeThreshold time.Duration) []ResourceCollector {
+func Registry(lookback, assetAgeThreshold time.Duration, perJobActivities bool) []ResourceCollector {
 	return []ResourceCollector{
-		Activities{Lookback: lookback},
+		Activities{Lookback: lookback, PerJob: perJobActivities},
 		Assets{AgeThreshold: assetAgeThreshold},
 		Capacity{},
 		Health{},
