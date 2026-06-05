@@ -49,25 +49,10 @@ func run(cfgPath string, once, debug bool) error {
 		return err
 	}
 
-	clients := make([]ppdmclient.Client, 0, len(cfg.Servers))
-	for _, s := range cfg.Servers {
-		clients = append(clients, ppdmclient.NewServerClient(ppdmclient.Config{
-			Name: s.Name, BaseURL: s.BaseURL(), Username: s.Username,
-			Password: s.Password, InsecureSkipVerify: s.InsecureSkipVerify,
-		}))
-	}
-	defer func() {
-		for _, c := range clients {
-			_ = c.Close()
-		}
-	}()
-
-	store := ppdm.NewSnapshotStore()
-	col := ppdm.NewCollector(clients, ppdm.Registry(cfg.Collection.Lookback, cfg.Collection.AssetAgeThreshold),
-		store, cfg.Collection.Interval, cfg.Collection.Timeout)
-
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
+
+	store := ppdm.NewSnapshotStore()
 
 	reg := prometheus.NewRegistry()
 	reg.MustRegister(ppdm.NewPromCollector(store))
@@ -86,17 +71,72 @@ func run(cfgPath string, once, debug bool) error {
 		}()
 	}
 
-	log.Info("running initial collection cycle")
-	col.CollectOnce(ctx)
+	// activeLoop owns the clients + cancel func of the currently-running collection
+	// loop, so a config reload can stop it and swap in a freshly-built one.
+	var activeClients []ppdmclient.Client
+	var activeCancel context.CancelFunc
+	stopActive := func() {
+		if activeCancel != nil {
+			activeCancel()
+		}
+		for _, c := range activeClients {
+			_ = c.Close()
+		}
+	}
+	defer stopActive()
+
+	startLoop := func(c *config.Config) {
+		clients := buildClients(c)
+		col := ppdm.NewCollector(clients, ppdm.Registry(c.Collection.Lookback, c.Collection.AssetAgeThreshold),
+			store, c.Collection.Interval, c.Collection.Timeout)
+		log.Info("running collection cycle")
+		col.CollectOnce(ctx)
+		lctx, cancel := context.WithCancel(ctx)
+		activeClients, activeCancel = clients, cancel
+		if !once {
+			go col.Run(lctx)
+		}
+	}
+
+	startLoop(cfg)
 	if once {
 		return nil
 	}
-	go col.Run(ctx)
+
+	if w, werr := config.NewWatcher(cfgPath); werr != nil {
+		log.WithError(werr).Warn("config hot-reload disabled")
+	} else {
+		defer w.Close()
+		go func() {
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case ncfg := <-w.Updates():
+					stopActive()
+					startLoop(ncfg)
+					log.Info("config reloaded; collector rebuilt")
+				}
+			}
+		}()
+	}
 
 	<-ctx.Done()
 	sctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	return srv.Shutdown(sctx)
+}
+
+// buildClients constructs a live PPDM client per configured server.
+func buildClients(cfg *config.Config) []ppdmclient.Client {
+	clients := make([]ppdmclient.Client, 0, len(cfg.Servers))
+	for _, s := range cfg.Servers {
+		clients = append(clients, ppdmclient.NewServerClient(ppdmclient.Config{
+			Name: s.Name, BaseURL: s.BaseURL(), Username: s.Username,
+			Password: s.Password, InsecureSkipVerify: s.InsecureSkipVerify,
+		}))
+	}
+	return clients
 }
 
 func healthHandler(w http.ResponseWriter, store *ppdm.SnapshotStore) {
