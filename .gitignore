@@ -1,0 +1,12 @@
+bin/
+dist/
+vendor/
+log/
+*.log
+.DS_Store
+site/
+/ppdm_exporter
+.env
+.vscode/
+.claude/
+.rtk/
