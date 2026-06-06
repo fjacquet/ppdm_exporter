@@ -6,6 +6,12 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+
+- `cmd/report` Phase 4a: scheduled per-tenant report delivery — an in-process scheduler
+  (daily/weekly/monthly + hour, UTC) emails each tenant's report (HTML + PDF attachment) over
+  SMTP, deduped/audited via `report_deliveries`. Demo adds a Mailpit sink.
+
 ## [1.0.0] - 2026-06-06
 
 ### Added
