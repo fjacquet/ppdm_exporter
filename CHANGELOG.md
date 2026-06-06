@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-06-06
+
 ### Added
 - Scaffold: Go module (`go 1.26.4`), full-contract Makefile, CLI skeleton, Apache-2.0 license.
 - Hand-rolled `resty/v2` PPDM client: bearer login (`POST /api/v2/login`), expiry-aware
