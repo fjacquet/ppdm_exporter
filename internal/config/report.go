@@ -30,6 +30,30 @@ func (s ReportServer) BaseURL() string {
 	return fmt.Sprintf("https://%s:%d", s.Host, port)
 }
 
+// ComplianceTarget is an SLA target spec: backup-frequency (RPO), retention, and copy count.
+type ComplianceTarget struct {
+	RPOHours      int `yaml:"rpoHours"`
+	RetentionDays int `yaml:"retentionDays"`
+	MinCopies     int `yaml:"minCopies"`
+}
+
+// ComplianceOverride narrows a target to the assets it selects. Empty selector fields match
+// any value; the most specific matching override wins (resolved in internal/report).
+type ComplianceOverride struct {
+	Tenant           string `yaml:"tenant"`
+	AssetType        string `yaml:"assetType"`
+	PolicyName       string `yaml:"policyName"`
+	ComplianceTarget `yaml:",inline"`
+}
+
+// Compliance configures Phase 2 SLA target resolution: a lateness grace window, the
+// per-tenant default target, and override rules that refine it.
+type Compliance struct {
+	Grace     time.Duration        `yaml:"grace"`
+	Defaults  ComplianceTarget     `yaml:"defaults"`
+	Overrides []ComplianceOverride `yaml:"overrides"`
+}
+
 // ReportConfig is the cmd/report configuration.
 type ReportConfig struct {
 	Database struct {
@@ -40,7 +64,8 @@ type ReportConfig struct {
 		Timeout       time.Duration `yaml:"timeout"`
 		RetentionDays int           `yaml:"retentionDays"`
 	} `yaml:"capture"`
-	Servers []ReportServer `yaml:"servers"`
+	Servers    []ReportServer `yaml:"servers"`
+	Compliance Compliance     `yaml:"compliance"`
 }
 
 // LoadReport reads, interpolates ${ENV} references, applies defaults, and validates.
@@ -84,6 +109,18 @@ func LoadReport(path string) (*ReportConfig, error) {
 	}
 	if cfg.Capture.RetentionDays == 0 {
 		cfg.Capture.RetentionDays = 400
+	}
+	if cfg.Compliance.Grace == 0 {
+		cfg.Compliance.Grace = 4 * time.Hour
+	}
+	if cfg.Compliance.Defaults.RPOHours == 0 {
+		cfg.Compliance.Defaults.RPOHours = 24
+	}
+	if cfg.Compliance.Defaults.RetentionDays == 0 {
+		cfg.Compliance.Defaults.RetentionDays = 30
+	}
+	if cfg.Compliance.Defaults.MinCopies == 0 {
+		cfg.Compliance.Defaults.MinCopies = 2
 	}
 	if cfg.Database.DSN == "" {
 		return nil, fmt.Errorf("database.dsn is required")

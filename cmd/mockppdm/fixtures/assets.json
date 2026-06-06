@@ -1,8 +1,8 @@
 {
   "page": {"number": 0, "totalPages": 1},
   "content": [
-    {"id":"v1","name":"vm-app01","type":"VMWARE_VIRTUAL_MACHINE","protectionStatus":"PROTECTED","lastAvailableCopyTime":"2026-06-04T20:00:00Z"},
-    {"id":"v2","name":"vm-app02","type":"VMWARE_VIRTUAL_MACHINE","protectionStatus":"UNPROTECTED","lastAvailableCopyTime":null},
-    {"id":"f1","name":"nas01","type":"FILE_SYSTEM","protectionStatus":"PROTECTED","lastAvailableCopyTime":"2026-06-01T00:00:00Z"}
+    {"id":"v1","name":"vm-app01","type":"VMWARE_VIRTUAL_MACHINE","protectionStatus":"PROTECTED","lastAvailableCopyTime":"2026-06-04T20:00:00Z","protectionPolicy":{"name":"Gold-VM"}},
+    {"id":"v2","name":"vm-app02","type":"VMWARE_VIRTUAL_MACHINE","protectionStatus":"UNPROTECTED","lastAvailableCopyTime":null,"protectionPolicy":{"name":"Gold-VM"}},
+    {"id":"f1","name":"nas01","type":"FILE_SYSTEM","protectionStatus":"PROTECTED","lastAvailableCopyTime":"2026-06-01T00:00:00Z","protectionPolicy":{"name":"FS-Weekly"}}
   ]
 }

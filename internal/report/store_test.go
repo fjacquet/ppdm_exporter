@@ -17,10 +17,16 @@ func newTestStore(t *testing.T) *Store {
 		t.Skip("skipping Postgres testcontainers in -short mode")
 	}
 	ctx := context.Background()
+	// The postgres image opens 5432 during init and then restarts, so waiting on the port
+	// alone races init (connections in that window are reset). Wait for the "ready to accept
+	// connections" log to appear a SECOND time — the real server, after init — to avoid flakes.
 	pg, err := tcpostgres.Run(ctx, "postgres:17-alpine",
 		tcpostgres.WithDatabase("backup_report"),
 		tcpostgres.WithUsername("test"), tcpostgres.WithPassword("test"),
-		testcontainers.WithWaitStrategy(wait.ForListeningPort("5432/tcp").WithStartupTimeout(60*time.Second)),
+		testcontainers.WithWaitStrategy(
+			wait.ForLog("database system is ready to accept connections").
+				WithOccurrence(2).WithStartupTimeout(60*time.Second),
+		),
 	)
 	if err != nil {
 		t.Fatalf("start postgres: %v", err)

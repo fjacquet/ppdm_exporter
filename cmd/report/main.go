@@ -70,7 +70,7 @@ func run(cfgPath string, once, debug bool) error {
 		}
 	}()
 
-	capt := report.NewCapturer(store, version, cfg.Capture.RetentionDays)
+	capt := report.NewCapturer(store, version, cfg.Capture.RetentionDays, cfg.Compliance)
 	log.Info("running initial capture cycle")
 	capt.RunOnce(ctx, servers, cfg.Capture.Timeout)
 	if once {

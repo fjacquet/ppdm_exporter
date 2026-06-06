@@ -1,5 +1,13 @@
 # ppdm_exporter
 
+[![CI](https://github.com/fjacquet/ppdm_exporter/actions/workflows/ci.yml/badge.svg)](https://github.com/fjacquet/ppdm_exporter/actions/workflows/ci.yml)
+[![Release](https://github.com/fjacquet/ppdm_exporter/actions/workflows/release.yml/badge.svg)](https://github.com/fjacquet/ppdm_exporter/actions/workflows/release.yml)
+[![Docs](https://github.com/fjacquet/ppdm_exporter/actions/workflows/docs.yml/badge.svg)](https://github.com/fjacquet/ppdm_exporter/actions/workflows/docs.yml)
+[![Go Reference](https://pkg.go.dev/badge/github.com/fjacquet/ppdm_exporter.svg)](https://pkg.go.dev/github.com/fjacquet/ppdm_exporter)
+[![Go Report Card](https://goreportcard.com/badge/github.com/fjacquet/ppdm_exporter)](https://goreportcard.com/report/github.com/fjacquet/ppdm_exporter)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/fjacquet/ppdm_exporter)](go.mod)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+
 A Prometheus + OTLP exporter for **Dell PowerProtect Data Manager (PPDM)**. One
 process polls many PPDM servers on an interval, publishes an immutable snapshot, and
 serves it at `/metrics` while optionally pushing the same snapshot over OTLP.

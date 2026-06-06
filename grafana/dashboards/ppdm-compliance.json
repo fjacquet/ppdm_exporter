@@ -1,0 +1,86 @@
+{
+  "annotations": {"list": []},
+  "editable": true,
+  "graphTooltip": 1,
+  "title": "PowerProtect — SLA Compliance",
+  "uid": "ppdm-compliance",
+  "tags": ["ppdm", "backup", "compliance", "sla"],
+  "timezone": "",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "1m",
+  "time": {"from": "now-24h", "to": "now"},
+  "templating": {
+    "list": [
+      {
+        "name": "tenant", "label": "Tenant", "type": "query",
+        "datasource": {"type": "postgres", "uid": "backuphistory"},
+        "query": "SELECT DISTINCT tenant FROM compliance ORDER BY 1", "refresh": 2,
+        "includeAll": true, "multi": true, "current": {"text": "All", "value": "$__all"}
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1, "type": "stat", "title": "Compliant",
+      "description": "Share of assets meeting every SLA rule (RPO, retention, copies).",
+      "datasource": {"type": "postgres", "uid": "backuphistory"},
+      "gridPos": {"h": 5, "w": 6, "x": 0, "y": 0},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background", "graphMode": "none"},
+      "fieldConfig": {"defaults": {"unit": "percentunit", "min": 0, "max": 1, "thresholds": {"steps": [{"color": "red", "value": null}, {"color": "orange", "value": 0.9}, {"color": "green", "value": 0.99}]}}},
+      "targets": [{"refId": "A", "format": "table", "rawQuery": true, "rawSql": "SELECT avg(compliant::int)::float8 AS \"compliant\" FROM compliance WHERE tenant IN ($tenant)"}]
+    },
+    {
+      "id": 2, "type": "stat", "title": "Non-compliant assets",
+      "datasource": {"type": "postgres", "uid": "backuphistory"},
+      "gridPos": {"h": 5, "w": 6, "x": 6, "y": 0},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background", "graphMode": "none"},
+      "fieldConfig": {"defaults": {"thresholds": {"steps": [{"color": "green", "value": null}, {"color": "red", "value": 1}]}}},
+      "targets": [{"refId": "A", "format": "table", "rawQuery": true, "rawSql": "SELECT count(*) AS \"non_compliant\" FROM compliance WHERE tenant IN ($tenant) AND NOT compliant"}]
+    },
+    {
+      "id": 3, "type": "bargauge", "title": "Compliant % by tenant",
+      "datasource": {"type": "postgres", "uid": "backuphistory"},
+      "gridPos": {"h": 5, "w": 12, "x": 12, "y": 0},
+      "options": {"orientation": "horizontal", "displayMode": "gradient", "reduceOptions": {"calcs": ["lastNotNull"]}},
+      "fieldConfig": {"defaults": {"unit": "percentunit", "min": 0, "max": 1, "thresholds": {"steps": [{"color": "red", "value": null}, {"color": "orange", "value": 0.9}, {"color": "green", "value": 0.99}]}}},
+      "targets": [{"refId": "A", "format": "table", "rawQuery": true, "rawSql": "SELECT tenant, avg(compliant::int)::float8 AS \"compliant\" FROM compliance WHERE tenant IN ($tenant) GROUP BY tenant ORDER BY tenant"}]
+    },
+    {
+      "id": 10, "type": "table", "title": "Non-compliant assets",
+      "description": "Each asset failing one or more SLA rules, with the failing rules.",
+      "datasource": {"type": "postgres", "uid": "backuphistory"},
+      "gridPos": {"h": 12, "w": 16, "x": 0, "y": 5},
+      "options": {"showHeader": true, "sortBy": [{"displayName": "reasons", "desc": false}]},
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {"matcher": {"id": "byName", "options": "reasons"}, "properties": [{"id": "custom.cellOptions", "value": {"type": "color-text"}}, {"id": "color", "value": {"mode": "fixed", "fixedColor": "red"}}]}
+        ]
+      },
+      "targets": [{"refId": "A", "format": "table", "rawQuery": true, "rawSql": "SELECT tenant, server, asset_name, asset_type, policy_name, reasons, rpo_ok, retention_ok, copies_ok FROM compliance WHERE tenant IN ($tenant) AND NOT compliant ORDER BY tenant, asset_name"}]
+    },
+    {
+      "id": 11, "type": "bargauge", "title": "Failures by rule",
+      "description": "How many assets fail each SLA rule.",
+      "datasource": {"type": "postgres", "uid": "backuphistory"},
+      "gridPos": {"h": 12, "w": 8, "x": 16, "y": 5},
+      "options": {"orientation": "horizontal", "displayMode": "gradient", "reduceOptions": {"calcs": ["lastNotNull"]}},
+      "fieldConfig": {"defaults": {"thresholds": {"steps": [{"color": "green", "value": null}, {"color": "red", "value": 1}]}}},
+      "targets": [{"refId": "A", "format": "table", "rawQuery": true, "rawSql": "SELECT 'rpo' AS rule, count(*) AS failures FROM compliance WHERE tenant IN ($tenant) AND NOT rpo_ok UNION ALL SELECT 'retention', count(*) FROM compliance WHERE tenant IN ($tenant) AND NOT retention_ok UNION ALL SELECT 'copies', count(*) FROM compliance WHERE tenant IN ($tenant) AND NOT copies_ok"}]
+    },
+    {
+      "id": 20, "type": "table", "title": "All assets — resolved targets & verdicts",
+      "datasource": {"type": "postgres", "uid": "backuphistory"},
+      "gridPos": {"h": 11, "w": 24, "x": 0, "y": 17},
+      "options": {"showHeader": true, "sortBy": [{"displayName": "compliant", "desc": false}]},
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {"matcher": {"id": "byName", "options": "rpo_seconds"}, "properties": [{"id": "unit", "value": "s"}]}
+        ]
+      },
+      "targets": [{"refId": "A", "format": "table", "rawQuery": true, "rawSql": "SELECT tenant, asset_name, asset_type, policy_name, compliant, reasons, rpo_seconds, retention_days, min_copies FROM compliance WHERE tenant IN ($tenant) ORDER BY compliant, asset_name"}]
+    }
+  ]
+}

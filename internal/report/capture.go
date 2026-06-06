@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/fjacquet/ppdm_exporter/internal/config"
 	"github.com/fjacquet/ppdm_exporter/internal/ppdmclient"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
@@ -16,11 +17,12 @@ type Capturer struct {
 	store         *Store
 	version       string
 	retentionDays int
+	compliance    config.Compliance
 }
 
-// NewCapturer wires a capturer to a store.
-func NewCapturer(store *Store, version string, retentionDays int) *Capturer {
-	return &Capturer{store: store, version: version, retentionDays: retentionDays}
+// NewCapturer wires a capturer to a store. compliance drives post-capture SLA target resolution.
+func NewCapturer(store *Store, version string, retentionDays int, compliance config.Compliance) *Capturer {
+	return &Capturer{store: store, version: version, retentionDays: retentionDays, compliance: compliance}
 }
 
 // ServerClient pairs a tenant with its PPDM client (built by main from config).
@@ -48,6 +50,11 @@ func (c *Capturer) CaptureServer(ctx context.Context, tenant string, client ppdm
 	if capErr != nil {
 		msg = capErr.Error()
 		log.WithFields(log.Fields{"server": server, "err": capErr}).Warn("capture failed")
+	} else if err := c.ResolveTargets(ctx, tenant, c.compliance); err != nil {
+		// SLA target resolution is a post-capture step: a failure is logged and the captured
+		// history still stands. It must not block this server's run or the others.
+		log.WithFields(log.Fields{"server": server, "tenant": tenant, "err": err}).
+			Warn("resolve SLA targets failed")
 	}
 	// Record the outcome on a detached context: if the capture timed out, ctx is already
 	// done and FinishRun on it would silently abandon the provenance row.
