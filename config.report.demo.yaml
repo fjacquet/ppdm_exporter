@@ -31,3 +31,7 @@ schedules:
     cadence: daily
     hour: 0              # 00:00 UTC -> always "due" in the demo, sends on first tick
     recipients: [ops@acme-corp.demo]
+retention:
+  defaultDays: 400
+  overrides:
+    - {tenant: acme-corp, days: 730}   # keep acme-corp's history for 2 years
