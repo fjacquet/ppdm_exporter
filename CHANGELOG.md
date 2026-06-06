@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-06-06
+
 ### Added
 
 - `cmd/report` Phase 4a: scheduled per-tenant report delivery — an in-process scheduler
