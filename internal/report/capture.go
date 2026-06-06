@@ -49,7 +49,11 @@ func (c *Capturer) CaptureServer(ctx context.Context, tenant string, client ppdm
 		msg = capErr.Error()
 		log.WithFields(log.Fields{"server": server, "err": capErr}).Warn("capture failed")
 	}
-	_ = c.store.FinishRun(ctx, runID, capErr == nil, msg, counts)
+	// Record the outcome on a detached context: if the capture timed out, ctx is already
+	// done and FinishRun on it would silently abandon the provenance row.
+	finishCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	_ = c.store.FinishRun(finishCtx, runID, capErr == nil, msg, counts)
 	return capErr
 }
 
@@ -114,6 +118,9 @@ func (c *Capturer) bootstrap(wm time.Time) time.Time {
 	return wm
 }
 
+// The watermark filter uses `ge` (>=), not `gt`: it re-fetches the boundary record each
+// cycle (cheap — the upsert is a no-op) but cannot skip records sharing the watermark
+// timestamp, which `gt` would.
 func activitiesPath(since time.Time) string {
 	return "/api/v2/activities?filter=" + url.QueryEscape(`createdAt ge "`+since.UTC().Format(time.RFC3339)+`"`)
 }

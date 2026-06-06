@@ -3,16 +3,20 @@ package report
 
 import "time"
 
-// parseTime parses an RFC3339 timestamp, returning ok=false for empty/unparseable input.
+// parseTime parses an RFC3339 timestamp (with or without sub-second precision),
+// returning ok=false for empty/unparseable input. Sub-second support matters: PPDM
+// emits fractional seconds, and a dropped timestamp would store NULL — which the
+// watermark and retention prune (NULL < cutoff is NULL) silently ignore.
 func parseTime(s string) (time.Time, bool) {
 	if s == "" {
 		return time.Time{}, false
 	}
-	t, err := time.Parse(time.RFC3339, s)
-	if err != nil {
-		return time.Time{}, false
+	for _, layout := range []string{time.RFC3339Nano, time.RFC3339} {
+		if t, err := time.Parse(layout, s); err == nil {
+			return t, true
+		}
 	}
-	return t, true
+	return time.Time{}, false
 }
 
 // Job is one /api/v2/activities record (a backup/restore job — immutable event).

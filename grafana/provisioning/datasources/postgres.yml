@@ -8,6 +8,7 @@ datasources:
     jsonData:
       database: backup_report
       sslmode: disable
+    # Demo-only credentials (match docker-compose). Replace for any non-localhost deployment.
     secureJsonData:
       password: report
     isDefault: false

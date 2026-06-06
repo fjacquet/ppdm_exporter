@@ -51,7 +51,7 @@ func (s *Store) UpsertJobs(ctx context.Context, tenant, server string, jobs []Jo
 			(id,tenant,server,category,subcategory,result_status,asset_id,asset_name,policy_name,
 			 started_at,completed_at,bytes_transferred,created_at,captured_at)
 			VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
-			ON CONFLICT (id) DO UPDATE SET result_status=EXCLUDED.result_status,
+			ON CONFLICT (id, server) DO UPDATE SET result_status=EXCLUDED.result_status,
 			 completed_at=EXCLUDED.completed_at, bytes_transferred=EXCLUDED.bytes_transferred,
 			 captured_at=EXCLUDED.captured_at`,
 			j.ID, tenant, server, j.Category, j.Subcategory, j.status(), j.Asset.ID, j.Asset.Name,
@@ -69,7 +69,7 @@ func (s *Store) UpsertCopies(ctx context.Context, tenant, server string, copies 
 			(id,tenant,server,asset_id,policy_name,copy_type,create_time,expiration_time,retention_time,
 			 retention_lock,storage_system_id,location,size_bytes,captured_at)
 			VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
-			ON CONFLICT (id) DO UPDATE SET expiration_time=EXCLUDED.expiration_time,
+			ON CONFLICT (id, server) DO UPDATE SET expiration_time=EXCLUDED.expiration_time,
 			 retention_time=EXCLUDED.retention_time, retention_lock=EXCLUDED.retention_lock,
 			 captured_at=EXCLUDED.captured_at`,
 			c.ID, tenant, server, c.AssetID, c.PolicyName, c.CopyType, ts(c.CreateTime),
@@ -86,7 +86,7 @@ func (s *Store) UpsertAssets(ctx context.Context, tenant, server string, assets 
 		b.Queue(`INSERT INTO assets
 			(id,tenant,server,name,type,protection_status,last_available_copy_time,policy_name,updated_at,captured_at)
 			VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
-			ON CONFLICT (id) DO UPDATE SET protection_status=EXCLUDED.protection_status,
+			ON CONFLICT (id, server) DO UPDATE SET protection_status=EXCLUDED.protection_status,
 			 last_available_copy_time=EXCLUDED.last_available_copy_time, policy_name=EXCLUDED.policy_name,
 			 updated_at=EXCLUDED.updated_at, captured_at=EXCLUDED.captured_at`,
 			a.ID, tenant, server, a.Name, a.Type, a.ProtectionStatus, ts(a.LastAvailableCopyTime),
@@ -102,7 +102,7 @@ func (s *Store) UpsertPolicies(ctx context.Context, tenant, server string, polic
 		obj, _ := json.Marshal(p.Objectives)
 		b.Queue(`INSERT INTO protection_policies (id,tenant,server,name,objectives,updated_at,captured_at)
 			VALUES ($1,$2,$3,$4,$5,$6,$7)
-			ON CONFLICT (id) DO UPDATE SET name=EXCLUDED.name, objectives=EXCLUDED.objectives,
+			ON CONFLICT (id, server) DO UPDATE SET name=EXCLUDED.name, objectives=EXCLUDED.objectives,
 			 updated_at=EXCLUDED.updated_at, captured_at=EXCLUDED.captured_at`,
 			p.ID, tenant, server, p.Name, obj, capturedAt, capturedAt)
 	}
@@ -144,7 +144,10 @@ func (s *Store) watermark(ctx context.Context, q, server string) (time.Time, err
 	return *t, nil
 }
 
-// Prune deletes append-only rows older than retentionDays.
+// Prune deletes append-only event rows (backup_jobs, copies) older than retentionDays.
+// assets and protection_policies hold current upsert-latest state, not time-series events,
+// so they are intentionally not pruned here (a decommissioned asset's last-known row is
+// kept as part of the history until a future explicit reconciliation pass).
 func (s *Store) Prune(ctx context.Context, retentionDays int) error {
 	cutoff := time.Now().AddDate(0, 0, -retentionDays)
 	if _, err := s.pool.Exec(ctx, `DELETE FROM backup_jobs WHERE created_at < $1`, cutoff); err != nil {

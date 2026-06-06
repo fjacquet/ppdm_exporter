@@ -1,8 +1,8 @@
 {
   "page": {"number": 0, "totalPages": 1},
   "content": [
-    {"id":"act-1","name":"Protecting VM - vm-app01","category":"PROTECT","subcategory":"AD_HOC","state":"COMPLETED","startedAt":"2026-06-05T01:00:00Z","completedAt":"2026-06-05T01:04:12Z","result":{"status":"SUCCESS","bytesTransferred":1048576},"protectionPolicy":{"name":"Gold-VM"},"asset":{"name":"vm-app01"}},
-    {"id":"act-2","name":"Protecting DB - sql-db1","category":"PROTECT","subcategory":"SCHEDULED","state":"COMPLETED","startedAt":"2026-06-05T02:00:00Z","completedAt":"2026-06-05T02:00:08Z","result":{"status":"FAILED","bytesTransferred":0},"protectionPolicy":{"name":"SQL-Daily"},"asset":{"name":"sql-db1"}},
-    {"id":"act-3","name":"Restore - nas01","category":"RESTORE","subcategory":"FLR","state":"RUNNING","startedAt":"2026-06-05T03:00:00Z","completedAt":null,"result":{"status":"OK","bytesTransferred":524288},"protectionPolicy":{"name":""},"asset":{"name":"nas01"}}
+    {"id":"act-1","name":"Protecting VM - vm-app01","category":"PROTECT","subcategory":"AD_HOC","state":"COMPLETED","createdAt":"2026-06-05T01:00:00Z","startedAt":"2026-06-05T01:00:00Z","completedAt":"2026-06-05T01:04:12Z","result":{"status":"SUCCESS","bytesTransferred":1048576},"protectionPolicy":{"name":"Gold-VM"},"asset":{"name":"vm-app01"}},
+    {"id":"act-2","name":"Protecting DB - sql-db1","category":"PROTECT","subcategory":"SCHEDULED","state":"COMPLETED","createdAt":"2026-06-05T02:00:00Z","startedAt":"2026-06-05T02:00:00Z","completedAt":"2026-06-05T02:00:08Z","result":{"status":"FAILED","bytesTransferred":0},"protectionPolicy":{"name":"SQL-Daily"},"asset":{"name":"sql-db1"}},
+    {"id":"act-3","name":"Restore - nas01","category":"RESTORE","subcategory":"FLR","state":"RUNNING","createdAt":"2026-06-05T03:00:00Z","startedAt":"2026-06-05T03:00:00Z","completedAt":null,"result":{"status":"OK","bytesTransferred":524288},"protectionPolicy":{"name":""},"asset":{"name":"nas01"}}
   ]
 }

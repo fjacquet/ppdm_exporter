@@ -1,5 +1,6 @@
+-- PPDM ids are issued per-server, not globally unique, so the primary key is (id, server).
 CREATE TABLE IF NOT EXISTS backup_jobs (
-  id text PRIMARY KEY,
+  id text NOT NULL,
   tenant text NOT NULL,
   server text NOT NULL,
   category text,
@@ -12,13 +13,14 @@ CREATE TABLE IF NOT EXISTS backup_jobs (
   completed_at timestamptz,
   bytes_transferred bigint,
   created_at timestamptz,
-  captured_at timestamptz NOT NULL
+  captured_at timestamptz NOT NULL,
+  PRIMARY KEY (id, server)
 );
 CREATE INDEX IF NOT EXISTS idx_backup_jobs_tenant_created ON backup_jobs (tenant, created_at);
 CREATE INDEX IF NOT EXISTS idx_backup_jobs_server_created ON backup_jobs (server, created_at);
 
 CREATE TABLE IF NOT EXISTS copies (
-  id text PRIMARY KEY,
+  id text NOT NULL,
   tenant text NOT NULL,
   server text NOT NULL,
   asset_id text,
@@ -31,12 +33,13 @@ CREATE TABLE IF NOT EXISTS copies (
   storage_system_id text,
   location text,
   size_bytes bigint,
-  captured_at timestamptz NOT NULL
+  captured_at timestamptz NOT NULL,
+  PRIMARY KEY (id, server)
 );
 CREATE INDEX IF NOT EXISTS idx_copies_server_create ON copies (server, create_time);
 
 CREATE TABLE IF NOT EXISTS assets (
-  id text PRIMARY KEY,
+  id text NOT NULL,
   tenant text NOT NULL,
   server text NOT NULL,
   name text,
@@ -45,17 +48,19 @@ CREATE TABLE IF NOT EXISTS assets (
   last_available_copy_time timestamptz,
   policy_name text,
   updated_at timestamptz NOT NULL,
-  captured_at timestamptz NOT NULL
+  captured_at timestamptz NOT NULL,
+  PRIMARY KEY (id, server)
 );
 
 CREATE TABLE IF NOT EXISTS protection_policies (
-  id text PRIMARY KEY,
+  id text NOT NULL,
   tenant text NOT NULL,
   server text NOT NULL,
   name text,
   objectives jsonb,
   updated_at timestamptz NOT NULL,
-  captured_at timestamptz NOT NULL
+  captured_at timestamptz NOT NULL,
+  PRIMARY KEY (id, server)
 );
 
 CREATE TABLE IF NOT EXISTS capture_runs (

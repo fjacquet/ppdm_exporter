@@ -38,3 +38,37 @@ func TestCaptureServerPersists(t *testing.T) {
 		t.Fatal("capture_run not ok")
 	}
 }
+
+// TestCaptureServerIdempotentAcrossCycles runs two capture cycles against the same data
+// and asserts no duplicate rows — the ge-watermark re-fetch + upsert must be a no-op.
+func TestCaptureServerIdempotentAcrossCycles(t *testing.T) {
+	st := newTestStore(t)
+	m := ppdmclient.NewMock("ppdm01")
+	m.SetJSONPrefix("/api/v2/activities", `{"page":{"totalPages":1},"content":[
+		{"id":"j1","category":"PROTECT","state":"COMPLETED","createdAt":"2026-06-05T01:00:00Z",
+		 "result":{"status":"SUCCESS"},"asset":{"id":"a1","name":"vm-app01"}}]}`)
+	m.SetJSONPrefix("/api/v2/copies", `{"page":{"totalPages":1},"content":[
+		{"id":"c1","assetId":"a1","createTime":"2026-06-05T01:04:00Z"}]}`)
+	m.SetJSONPrefix("/api/v2/assets", `{"page":{"totalPages":1},"content":[{"id":"a1","name":"vm-app01"}]}`)
+	m.SetJSONPrefix("/api/v3/protection-policies", `{"page":{"totalPages":1},"content":[{"id":"p1","name":"Gold-VM"}]}`)
+
+	cap := NewCapturer(st, "v-test", 400)
+	ctx := context.Background()
+	for i := 0; i < 2; i++ {
+		if err := cap.CaptureServer(ctx, "acme", m); err != nil {
+			t.Fatalf("cycle %d: %v", i, err)
+		}
+	}
+	for tbl, want := range map[string]int{"backup_jobs": 1, "copies": 1, "assets": 1, "protection_policies": 1} {
+		var n int
+		_ = st.pool.QueryRow(ctx, "SELECT count(*) FROM "+tbl).Scan(&n)
+		if n != want {
+			t.Errorf("%s rows after 2 cycles = %d, want %d (no duplicates)", tbl, n, want)
+		}
+	}
+	// The second cycle's watermark must be the first cycle's max, not the bootstrap default.
+	wm, _ := st.JobWatermark(ctx, "ppdm01")
+	if wm.IsZero() {
+		t.Fatal("watermark did not advance after first cycle")
+	}
+}
