@@ -114,3 +114,18 @@ curl '127.0.0.1:9103/report?tenant=acme-corp'                                   
 ```
 
 When no `authToken` and no `tokens` are configured, the endpoint is unauthenticated (localhost posture).
+
+## Retention (Phase 4c)
+
+History is pruned per tenant. `retention.defaultDays` applies to any tenant without an override
+(it falls back to `capture.retentionDays` when unset); `overrides` set per-tenant windows:
+
+```yaml
+retention:
+  defaultDays: 400
+  overrides:
+    - {tenant: acme-corp, days: 730}
+```
+
+Each cycle, `backup_jobs` and `copies` older than the tenant's window are deleted; a tenant's first
+capture also backfills only its own window. `assets`/`protection_policies` (current state) are not pruned.

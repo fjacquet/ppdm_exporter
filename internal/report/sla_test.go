@@ -50,7 +50,7 @@ func TestResolveTargets(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	capt := NewCapturer(st, "v-test", 400, config.Compliance{})
+	capt := NewCapturer(st, "v-test", config.Retention{DefaultDays: 400}, config.Compliance{})
 	if err := capt.ResolveTargets(ctx, "acme", goldVMConfig()); err != nil {
 		t.Fatalf("ResolveTargets: %v", err)
 	}
@@ -82,7 +82,7 @@ func TestCaptureServerResolvesTargets(t *testing.T) {
 	m.SetJSONPrefix("/api/v3/protection-policies", `{"page":{"totalPages":1},"content":[
 		{"id":"p1","name":"Gold-VM","objectives":[{"type":"BACKUP","schedule":{"interval":"PT24H"},"retention":{"interval":"P30D"}}]}]}`)
 
-	capt := NewCapturer(st, "v-test", 400, goldVMConfig())
+	capt := NewCapturer(st, "v-test", config.Retention{DefaultDays: 400}, goldVMConfig())
 	if err := capt.CaptureServer(context.Background(), "acme", m); err != nil {
 		t.Fatalf("CaptureServer: %v", err)
 	}

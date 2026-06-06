@@ -14,6 +14,9 @@ All notable changes to this project are documented here. The format is based on
 - `cmd/report` Phase 4b: per-tenant `/report` access control — `report.tokens` scope each bearer
   token to specific tenants (`authToken` = all-tenants admin); an out-of-scope token gets 403
   before any data access. No new dependencies.
+- `cmd/report` Phase 4c: per-tenant retention — a `retention` block (defaultDays + per-tenant
+  overrides) prunes `backup_jobs`/`copies` and sets each tenant's first-capture backfill window;
+  `defaultDays` falls back to `capture.retentionDays`. Completes Phase 4.
 
 ## [1.0.0] - 2026-06-06
 

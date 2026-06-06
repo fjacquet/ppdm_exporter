@@ -25,7 +25,7 @@ func TestWatermarkAndPrune(t *testing.T) {
 		t.Fatalf("watermark = %v, want 2026-06-05T01:00", wm)
 	}
 
-	if err := st.Prune(ctx, 400); err != nil { // ~13 months
+	if err := st.Prune(ctx, 400, nil); err != nil { // ~13 months, global
 		t.Fatal(err)
 	}
 	var count int

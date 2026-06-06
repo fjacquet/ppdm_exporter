@@ -14,15 +14,16 @@ import (
 
 // Capturer pulls authoritative PPDM records for one server and persists them.
 type Capturer struct {
-	store         *Store
-	version       string
-	retentionDays int
-	compliance    config.Compliance
+	store      *Store
+	version    string
+	retention  config.Retention
+	compliance config.Compliance
 }
 
-// NewCapturer wires a capturer to a store. compliance drives post-capture SLA target resolution.
-func NewCapturer(store *Store, version string, retentionDays int, compliance config.Compliance) *Capturer {
-	return &Capturer{store: store, version: version, retentionDays: retentionDays, compliance: compliance}
+// NewCapturer wires a capturer to a store. retention drives per-tenant prune + backfill; compliance
+// drives post-capture SLA target resolution.
+func NewCapturer(store *Store, version string, retention config.Retention, compliance config.Compliance) *Capturer {
+	return &Capturer{store: store, version: version, retention: retention, compliance: compliance}
 }
 
 // ServerClient pairs a tenant with its PPDM client (built by main from config).
@@ -72,7 +73,7 @@ func (c *Capturer) capture(ctx context.Context, tenant, server string, client pp
 	if err != nil {
 		return counts, err
 	}
-	jobs, err := ppdmclient.GetAll[Job](ctx, client, activitiesPath(c.bootstrap(jobWM)), 500)
+	jobs, err := ppdmclient.GetAll[Job](ctx, client, activitiesPath(c.bootstrap(tenant, jobWM)), 500)
 	if err != nil {
 		return counts, fmt.Errorf("activities: %w", err)
 	}
@@ -86,7 +87,7 @@ func (c *Capturer) capture(ctx context.Context, tenant, server string, client pp
 	if err != nil {
 		return counts, err
 	}
-	copies, err := ppdmclient.GetAll[Copy](ctx, client, copiesPath(c.bootstrap(copyWM)), 500)
+	copies, err := ppdmclient.GetAll[Copy](ctx, client, copiesPath(c.bootstrap(tenant, copyWM)), 500)
 	if err != nil {
 		return counts, fmt.Errorf("copies: %w", err)
 	}
@@ -116,11 +117,11 @@ func (c *Capturer) capture(ctx context.Context, tenant, server string, client pp
 	return counts, nil
 }
 
-// bootstrap returns the watermark, or now-retention when there is no prior data, so the
-// first capture backfills history without fetching the entire server.
-func (c *Capturer) bootstrap(wm time.Time) time.Time {
+// bootstrap returns the watermark, or now minus the tenant's retention window when there is no prior
+// data, so the first capture backfills that tenant's history without fetching the entire server.
+func (c *Capturer) bootstrap(tenant string, wm time.Time) time.Time {
 	if wm.IsZero() {
-		return time.Now().AddDate(0, 0, -c.retentionDays)
+		return time.Now().AddDate(0, 0, -c.retention.DaysFor(tenant))
 	}
 	return wm
 }
@@ -150,7 +151,11 @@ func (c *Capturer) RunOnce(ctx context.Context, servers []ServerClient, timeout 
 		})
 	}
 	_ = g.Wait()
-	if err := c.store.Prune(ctx, c.retentionDays); err != nil {
+	overrides := make(map[string]int, len(c.retention.Overrides))
+	for _, o := range c.retention.Overrides {
+		overrides[o.Tenant] = o.Days
+	}
+	if err := c.store.Prune(ctx, c.retention.DefaultDays, overrides); err != nil {
 		log.WithError(err).Warn("prune failed")
 	}
 }

@@ -258,3 +258,73 @@ func TestLoadReportTokenValidation(t *testing.T) {
 		}
 	}
 }
+
+func TestLoadReportRetention(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "r.yaml")
+	yaml := `
+database: {dsn: "postgres://u@localhost/db"}
+servers:
+  - {name: ppdm01, host: h, username: u, password: p}
+retention:
+  defaultDays: 400
+  overrides:
+    - {tenant: acme-corp, days: 730}
+`
+	if err := os.WriteFile(path, []byte(yaml), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := LoadReport(path)
+	if err != nil {
+		t.Fatalf("LoadReport: %v", err)
+	}
+	if cfg.Retention.DefaultDays != 400 {
+		t.Errorf("defaultDays = %d", cfg.Retention.DefaultDays)
+	}
+	if cfg.Retention.DaysFor("acme-corp") != 730 {
+		t.Errorf("override = %d, want 730", cfg.Retention.DaysFor("acme-corp"))
+	}
+	if cfg.Retention.DaysFor("other") != 400 {
+		t.Errorf("default = %d, want 400", cfg.Retention.DaysFor("other"))
+	}
+}
+
+func TestLoadReportRetentionBackCompat(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "r.yaml")
+	// No retention block; capture.retentionDays seeds retention.defaultDays.
+	yaml := `
+database: {dsn: "postgres://u@localhost/db"}
+capture: {retentionDays: 200}
+servers:
+  - {name: ppdm01, host: h, username: u, password: p}
+`
+	if err := os.WriteFile(path, []byte(yaml), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := LoadReport(path)
+	if err != nil {
+		t.Fatalf("LoadReport: %v", err)
+	}
+	if cfg.Retention.DefaultDays != 200 {
+		t.Errorf("defaultDays = %d, want 200 (from capture.retentionDays)", cfg.Retention.DefaultDays)
+	}
+}
+
+func TestLoadReportRetentionValidation(t *testing.T) {
+	base := "database: {dsn: x}\nservers:\n  - {name: p, host: h, username: u, password: p}\n"
+	cases := map[string]string{
+		"override days 0":  base + "retention:\n  overrides:\n    - {tenant: a, days: 0}\n",
+		"empty tenant":     base + "retention:\n  overrides:\n    - {tenant: \"\", days: 30}\n",
+		"negative default": base + "retention:\n  defaultDays: -5\n",
+		"duplicate tenant": base + "retention:\n  overrides:\n    - {tenant: a, days: 30}\n    - {tenant: a, days: 60}\n",
+	}
+	for name, y := range cases {
+		dir := t.TempDir()
+		path := filepath.Join(dir, "r.yaml")
+		_ = os.WriteFile(path, []byte(y), 0o600)
+		if _, err := LoadReport(path); err == nil {
+			t.Errorf("%s: expected validation error", name)
+		}
+	}
+}

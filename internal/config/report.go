@@ -54,6 +54,29 @@ type Compliance struct {
 	Overrides []ComplianceOverride `yaml:"overrides"`
 }
 
+// RetentionOverride sets a per-tenant retention window (days) overriding the default.
+type RetentionOverride struct {
+	Tenant string `yaml:"tenant"`
+	Days   int    `yaml:"days"`
+}
+
+// Retention configures how long captured history is kept per tenant. DefaultDays applies to any
+// tenant without an override; it falls back to capture.retentionDays when unset.
+type Retention struct {
+	DefaultDays int                 `yaml:"defaultDays"`
+	Overrides   []RetentionOverride `yaml:"overrides"`
+}
+
+// DaysFor returns the retention window for a tenant: its override if present, else DefaultDays.
+func (r Retention) DaysFor(tenant string) int {
+	for _, o := range r.Overrides {
+		if o.Tenant == tenant {
+			return o.Days
+		}
+	}
+	return r.DefaultDays
+}
+
 // ReportToken authorizes a bearer token to read the named tenants' reports ("*" = all).
 type ReportToken struct {
 	Token   string   `yaml:"token"`
@@ -100,6 +123,7 @@ type ReportConfig struct {
 	} `yaml:"capture"`
 	Servers    []ReportServer `yaml:"servers"`
 	Compliance Compliance     `yaml:"compliance"`
+	Retention  Retention      `yaml:"retention"`
 	Report     ReportOutput   `yaml:"report"`
 	SMTP       SMTP           `yaml:"smtp"`
 	Schedules  []Schedule     `yaml:"schedules"`
@@ -168,6 +192,25 @@ func LoadReport(path string) (*ReportConfig, error) {
 	}
 	if cfg.Capture.RetentionDays == 0 {
 		cfg.Capture.RetentionDays = 400
+	}
+	if cfg.Retention.DefaultDays == 0 {
+		cfg.Retention.DefaultDays = cfg.Capture.RetentionDays
+	}
+	if cfg.Retention.DefaultDays <= 0 {
+		return nil, fmt.Errorf("retention.defaultDays must be > 0")
+	}
+	seen := make(map[string]bool, len(cfg.Retention.Overrides))
+	for i, o := range cfg.Retention.Overrides {
+		if o.Tenant == "" {
+			return nil, fmt.Errorf("retention override %d: tenant required", i)
+		}
+		if o.Days <= 0 {
+			return nil, fmt.Errorf("retention override %d (%s): days must be > 0", i, o.Tenant)
+		}
+		if seen[o.Tenant] {
+			return nil, fmt.Errorf("retention override %d: duplicate tenant %q", i, o.Tenant)
+		}
+		seen[o.Tenant] = true
 	}
 	if cfg.Compliance.Grace == 0 {
 		cfg.Compliance.Grace = 4 * time.Hour
