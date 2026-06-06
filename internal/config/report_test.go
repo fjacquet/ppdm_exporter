@@ -210,3 +210,51 @@ func TestParseWeekday(t *testing.T) {
 		t.Error("expected error for xyz")
 	}
 }
+
+func TestLoadReportTokens(t *testing.T) {
+	t.Setenv("ACME_TOKEN", "acme-secret")
+	dir := t.TempDir()
+	path := filepath.Join(dir, "r.yaml")
+	yaml := `
+database: {dsn: "postgres://u@localhost/db"}
+servers:
+  - {name: ppdm01, host: h, username: u, password: p}
+report:
+  listen: "127.0.0.1:9103"
+  tokens:
+    - {token: "${ACME_TOKEN}", tenants: [acme-corp]}
+    - {token: "all", tenants: ["*"]}
+`
+	if err := os.WriteFile(path, []byte(yaml), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := LoadReport(path)
+	if err != nil {
+		t.Fatalf("LoadReport: %v", err)
+	}
+	if len(cfg.Report.Tokens) != 2 {
+		t.Fatalf("tokens = %d, want 2", len(cfg.Report.Tokens))
+	}
+	if cfg.Report.Tokens[0].Token != "acme-secret" || cfg.Report.Tokens[0].Tenants[0] != "acme-corp" {
+		t.Errorf("token0 = %+v", cfg.Report.Tokens[0])
+	}
+	if cfg.Report.Tokens[1].Tenants[0] != "*" {
+		t.Errorf("token1 = %+v", cfg.Report.Tokens[1])
+	}
+}
+
+func TestLoadReportTokenValidation(t *testing.T) {
+	base := "database: {dsn: x}\nservers:\n  - {name: p, host: h, username: u, password: p}\n"
+	cases := map[string]string{
+		"empty token":   base + "report:\n  tokens:\n    - {token: \"\", tenants: [acme]}\n",
+		"empty tenants": base + "report:\n  tokens:\n    - {token: t, tenants: []}\n",
+	}
+	for name, y := range cases {
+		dir := t.TempDir()
+		path := filepath.Join(dir, "r.yaml")
+		_ = os.WriteFile(path, []byte(y), 0o600)
+		if _, err := LoadReport(path); err == nil {
+			t.Errorf("%s: expected validation error", name)
+		}
+	}
+}
