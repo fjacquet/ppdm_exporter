@@ -10,8 +10,8 @@ import (
 )
 
 func TestHandlerServesReport(t *testing.T) {
-	st := storeFor(t)                  // from data_test.go: tenant acme has assets
-	h := NewHandler(st, "Acme Co", "") // no auth
+	st := storeFor(t)                                      // from data_test.go: tenant acme has assets
+	h := NewHandler(st, "Acme Co", NewAuthorizer("", nil)) // no auth
 	srv := httptest.NewServer(h)
 	defer srv.Close()
 
@@ -34,7 +34,7 @@ func TestHandlerServesReport(t *testing.T) {
 
 func TestHandlerValidation(t *testing.T) {
 	st := storeFor(t)
-	h := NewHandler(st, "Acme Co", "tok")
+	h := NewHandler(st, "Acme Co", NewAuthorizer("tok", nil))
 	srv := httptest.NewServer(h)
 	defer srv.Close()
 
@@ -80,12 +80,47 @@ func TestHandlerValidation(t *testing.T) {
 
 func TestHandlerRejectsNonGET(t *testing.T) {
 	st := reporttest.NewStore(t)
-	srv := httptest.NewServer(NewHandler(st, "B", ""))
+	srv := httptest.NewServer(NewHandler(st, "B", NewAuthorizer("", nil)))
 	defer srv.Close()
 	req, _ := http.NewRequestWithContext(t.Context(), http.MethodPost, srv.URL+"/report?tenant=acme", nil)
 	resp, _ := http.DefaultClient.Do(req)
 	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusMethodNotAllowed {
 		t.Errorf("POST -> %d, want 405", resp.StatusCode)
+	}
+}
+
+func TestHandlerPerTenantAuthz(t *testing.T) {
+	st := storeFor(t) // tenant "acme" has data; "globex" does not
+	h := NewHandler(st, "Acme Co", NewAuthorizer("", []TokenScope{
+		{Token: "acmetok", Tenants: []string{"acme"}},
+	}))
+	srv := httptest.NewServer(h)
+	defer srv.Close()
+
+	get := func(path, bearer string) int {
+		req, _ := http.NewRequestWithContext(t.Context(), http.MethodGet, srv.URL+path, nil)
+		if bearer != "" {
+			req.Header.Set("Authorization", "Bearer "+bearer)
+		}
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_ = resp.Body.Close()
+		return resp.StatusCode
+	}
+	if c := get("/report?tenant=acme", "acmetok"); c != 200 {
+		t.Errorf("in-scope tenant -> %d, want 200", c)
+	}
+	if c := get("/report?tenant=globex", "acmetok"); c != 403 {
+		t.Errorf("out-of-scope tenant -> %d, want 403", c)
+	}
+	// authorize-before-build: a nonexistent tenant outside scope is 403, not a 404 existence oracle.
+	if c := get("/report?tenant=ghost", "acmetok"); c != 403 {
+		t.Errorf("out-of-scope nonexistent tenant -> %d, want 403 (no existence oracle)", c)
+	}
+	if c := get("/report?tenant=acme", "wrong"); c != 401 {
+		t.Errorf("unknown token -> %d, want 401", c)
 	}
 }
