@@ -28,6 +28,10 @@ All notable changes to this project are documented here. The format is based on
   prune, `capture_runs` provenance, tenant tagging — plus a Grafana **Backup History**
   view over Postgres. Reuses the shared PPDM client; exporter binary unchanged.
 
+- `cmd/report` Phase 3: branded backup-assurance report (HTML via html/template + pure-Go PDF
+  via maroto v2) over the compliance view, with a computed 3-2-1-1-0 badge (`rule_321110`
+  view). Generated via `report render` CLI and an opt-in read-only `GET /report` endpoint.
+
 ### Deferred
 - OTLP trace spans (diagnostic tracer manager) — metrics OTLP shipped; tracing is a follow-up.
 - Backup reporter Phases 2–4 (SLA evaluation, branded PDF/HTML report, scheduling/delivery).

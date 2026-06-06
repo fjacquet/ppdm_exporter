@@ -13,3 +13,6 @@ servers:
     username: demo
     password: demo
     insecureSkipVerify: true
+report:
+  listen: "0.0.0.0:9103"
+  brandName: "Acme Backup Assurance"

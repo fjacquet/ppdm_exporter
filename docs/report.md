@@ -58,3 +58,23 @@ store — this is the "global search" layer; a signed/branded report is a later 
 > **Provisional shapes:** `/copies` and `/protection-policies` field names are modeled from
 > the 19.22.0 API reference and tagged `// provisional` (one struct + one fixture each) —
 > see ADR-0009.
+
+## Assurance report (Phase 3)
+
+Render a tenant's current-snapshot report — SLA compliance verdicts plus a 3-2-1-1-0
+backup-rule badge — as branded HTML or pure-Go PDF:
+
+```bash
+./bin/report render --tenant acme-corp --format pdf --out acme.pdf
+./bin/report render --tenant acme-corp --format html > acme.html
+```
+
+When `report.listen` is set, the capture process also serves the report read-only:
+
+```bash
+curl 'http://127.0.0.1:9103/report?tenant=acme-corp&format=html'
+# with auth: -H "Authorization: Bearer $REPORT_TOKEN"
+```
+
+> The 3-2-1-1-0 "2 media" and "1 offsite" checks are best-effort heuristics over provisional
+> PPDM copy fields (`storage_system_id`, `location`); the report labels them as such.
