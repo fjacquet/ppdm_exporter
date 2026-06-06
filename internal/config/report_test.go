@@ -145,3 +145,68 @@ func TestLoadReportReportBrandDefault(t *testing.T) {
 		t.Fatalf("default brand = %q", cfg.Report.BrandName)
 	}
 }
+
+func TestLoadReportSchedules(t *testing.T) {
+	t.Setenv("SMTP_PASSWORD", "smtps3cret")
+	dir := t.TempDir()
+	path := filepath.Join(dir, "r.yaml")
+	yaml := `
+database: {dsn: "postgres://u@localhost/db"}
+servers:
+  - {name: ppdm01, host: h, username: u, password: p}
+smtp:
+  host: smtp.example.com
+  from: "assurance@example.com"
+  username: smtpuser
+  password: "${SMTP_PASSWORD}"
+  starttls: true
+schedules:
+  - {tenant: acme, cadence: weekly, weekday: Mon, hour: 6, recipients: [ops@acme.com]}
+`
+	if err := os.WriteFile(path, []byte(yaml), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := LoadReport(path)
+	if err != nil {
+		t.Fatalf("LoadReport: %v", err)
+	}
+	if cfg.SMTP.Host != "smtp.example.com" || cfg.SMTP.Port != 587 || cfg.SMTP.Password != "smtps3cret" {
+		t.Fatalf("smtp = %+v", cfg.SMTP)
+	}
+	if len(cfg.Schedules) != 1 {
+		t.Fatalf("schedules = %d", len(cfg.Schedules))
+	}
+	s := cfg.Schedules[0]
+	if s.Tenant != "acme" || s.Cadence != "weekly" || s.Weekday != "Mon" || s.Hour != 6 ||
+		len(s.Recipients) != 1 {
+		t.Fatalf("schedule = %+v", s)
+	}
+}
+
+func TestLoadReportScheduleValidation(t *testing.T) {
+	base := "database: {dsn: x}\nservers:\n  - {name: p, host: h, username: u, password: p}\n"
+	cases := map[string]string{
+		"bad cadence":   base + "smtp: {host: h, from: f}\nschedules:\n  - {tenant: a, cadence: hourly, hour: 6, recipients: [x@y.z]}\n",
+		"bad hour":      base + "smtp: {host: h, from: f}\nschedules:\n  - {tenant: a, cadence: daily, hour: 99, recipients: [x@y.z]}\n",
+		"no recipients": base + "smtp: {host: h, from: f}\nschedules:\n  - {tenant: a, cadence: daily, hour: 6, recipients: []}\n",
+		"no smtp host":  base + "smtp: {from: f}\nschedules:\n  - {tenant: a, cadence: daily, hour: 6, recipients: [x@y.z]}\n",
+		"bad weekday":   base + "smtp: {host: h, from: f}\nschedules:\n  - {tenant: a, cadence: weekly, weekday: Funday, hour: 6, recipients: [x@y.z]}\n",
+	}
+	for name, y := range cases {
+		dir := t.TempDir()
+		path := filepath.Join(dir, "r.yaml")
+		_ = os.WriteFile(path, []byte(y), 0o600)
+		if _, err := LoadReport(path); err == nil {
+			t.Errorf("%s: expected validation error", name)
+		}
+	}
+}
+
+func TestParseWeekday(t *testing.T) {
+	if d, err := ParseWeekday("Mon"); err != nil || d != time.Monday {
+		t.Errorf("Mon -> %v,%v", d, err)
+	}
+	if _, err := ParseWeekday("xyz"); err == nil {
+		t.Error("expected error for xyz")
+	}
+}
