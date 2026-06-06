@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -58,6 +59,22 @@ func run(cfgPath string, once, debug bool) error {
 	defer store.Close()
 	if err := store.Migrate(ctx); err != nil {
 		return err
+	}
+
+	if cfg.Report.Listen != "" {
+		h := render.NewHandler(store, cfg.Report.BrandName, cfg.Report.AuthToken)
+		srv := &http.Server{Addr: cfg.Report.Listen, Handler: h, ReadHeaderTimeout: 5 * time.Second}
+		go func() {
+			log.WithField("addr", cfg.Report.Listen).Info("serving report endpoint")
+			if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+				log.WithError(err).Error("report endpoint failed")
+			}
+		}()
+		defer func() {
+			shutCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			_ = srv.Shutdown(shutCtx)
+		}()
 	}
 
 	servers := make([]report.ServerClient, 0, len(cfg.Servers))
