@@ -57,4 +57,40 @@ services:
       - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
     depends_on:
       - prometheus
+      - postgres
+    restart: unless-stopped
+
+  # --- Backup history (cmd/report) ---
+  postgres:
+    image: postgres:17-alpine
+    container_name: ppdm_postgres
+    environment:
+      - POSTGRES_USER=report
+      - POSTGRES_PASSWORD=report
+      - POSTGRES_DB=backup_report
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U report -d backup_report"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+
+  report:
+    build:
+      context: .
+      dockerfile: deploy/report/Dockerfile
+    image: ppdm_report
+    pull_policy: build
+    container_name: ppdm_report
+    command: ["--config", "/etc/report/config.report.yaml", "--debug"]
+    volumes:
+      - ./config.report.demo.yaml:/etc/report/config.report.yaml:ro
+    depends_on:
+      mockppdm:
+        condition: service_started
+      postgres:
+        condition: service_healthy
     restart: unless-stopped

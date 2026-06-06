@@ -1,0 +1,15 @@
+---
+database:
+  dsn: "postgres://report:report@postgres:5432/backup_report?sslmode=disable"
+capture:
+  interval: "30s"
+  timeout: "30s"
+  retentionDays: 400
+servers:
+  - name: mock-ppdm-01
+    tenant: acme-corp
+    host: mockppdm
+    port: 8443
+    username: demo
+    password: demo
+    insecureSkipVerify: true

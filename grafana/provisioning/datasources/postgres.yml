@@ -1,0 +1,15 @@
+apiVersion: 1
+datasources:
+  - name: BackupHistory
+    type: postgres
+    uid: backuphistory
+    url: postgres:5432
+    user: report
+    jsonData:
+      database: backup_report
+      sslmode: disable
+    # Demo-only credentials (match docker-compose). Replace for any non-localhost deployment.
+    secureJsonData:
+      password: report
+    isDefault: false
+    editable: false

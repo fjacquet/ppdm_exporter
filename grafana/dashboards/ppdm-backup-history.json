@@ -1,0 +1,21 @@
+{
+  "title": "PowerProtect — Backup History (global search)",
+  "uid": "ppdm-backup-history",
+  "tags": ["ppdm", "backup", "history"],
+  "schemaVersion": 39, "version": 1, "time": {"from": "now-30d", "to": "now"},
+  "templating": {"list": [
+    {"name": "tenant", "type": "query", "datasource": {"type": "postgres", "uid": "backuphistory"},
+     "query": "SELECT DISTINCT tenant FROM backup_jobs", "includeAll": true, "multi": true,
+     "current": {"text": "All", "value": "$__all"}}
+  ]},
+  "panels": [
+    {"id": 1, "type": "table", "title": "Backup jobs", "datasource": {"type": "postgres", "uid": "backuphistory"},
+     "gridPos": {"h": 12, "w": 24, "x": 0, "y": 0},
+     "targets": [{"refId": "A", "format": "table", "rawQuery": true,
+       "rawSql": "SELECT created_at AS \"time\", tenant, server, category, result_status, asset_name, policy_name, bytes_transferred FROM backup_jobs WHERE tenant IN ($tenant) ORDER BY created_at DESC LIMIT 500"}]},
+    {"id": 2, "type": "table", "title": "Copies (retention & location)", "datasource": {"type": "postgres", "uid": "backuphistory"},
+     "gridPos": {"h": 10, "w": 24, "x": 0, "y": 12},
+     "targets": [{"refId": "A", "format": "table", "rawQuery": true,
+       "rawSql": "SELECT create_time AS \"time\", tenant, asset_id, copy_type, retention_time, retention_lock, location, size_bytes FROM copies WHERE tenant IN ($tenant) ORDER BY create_time DESC LIMIT 500"}]}
+  ]
+}

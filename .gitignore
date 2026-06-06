@@ -10,3 +10,4 @@ site/
 .vscode/
 .claude/
 .rtk/
+/report

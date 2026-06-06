@@ -8,7 +8,7 @@ GOLANGCI_LINT_VERSION   ?= v2.12.2
 CYCLONEDX_GOMOD_VERSION ?= latest
 GOVULNCHECK_VERSION     ?= latest
 
-.PHONY: tools tools-sbom cli test test-race test-coverage vet fmt fmt-check lint vuln sbom \
+.PHONY: tools tools-sbom cli report-cli test test-race test-coverage vet fmt fmt-check lint vuln sbom \
         sure ci release release-snapshot docker run-cli clean clean-dist
 
 # --- tooling ---
@@ -51,6 +51,9 @@ ci: fmt-check vet lint test-race vuln cli
 
 cli:
 	go build -ldflags "$(LDFLAGS)" -o $(BIN) .
+
+report-cli:
+	go build -ldflags "$(LDFLAGS)" -o bin/report ./cmd/report
 
 run-cli: cli
 	./$(BIN) --config config.yaml --debug

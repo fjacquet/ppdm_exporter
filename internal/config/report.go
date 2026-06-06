@@ -1,0 +1,95 @@
+package config
+
+import (
+	"fmt"
+	"os"
+	"strings"
+	"time"
+
+	"gopkg.in/yaml.v2"
+)
+
+// ReportServer is one PPDM server captured for backup history, tagged with a tenant.
+type ReportServer struct {
+	Name               string `yaml:"name"`
+	Tenant             string `yaml:"tenant"`
+	Host               string `yaml:"host"`
+	Port               int    `yaml:"port"` // defaults to 8443
+	Username           string `yaml:"username"`
+	Password           string `yaml:"password"`
+	PasswordFile       string `yaml:"passwordFile"`
+	InsecureSkipVerify bool   `yaml:"insecureSkipVerify"`
+}
+
+// BaseURL returns the https://host:port root for the PPDM REST API.
+func (s ReportServer) BaseURL() string {
+	port := s.Port
+	if port == 0 {
+		port = 8443
+	}
+	return fmt.Sprintf("https://%s:%d", s.Host, port)
+}
+
+// ReportConfig is the cmd/report configuration.
+type ReportConfig struct {
+	Database struct {
+		DSN string `yaml:"dsn"`
+	} `yaml:"database"`
+	Capture struct {
+		Interval      time.Duration `yaml:"interval"`
+		Timeout       time.Duration `yaml:"timeout"`
+		RetentionDays int           `yaml:"retentionDays"`
+	} `yaml:"capture"`
+	Servers []ReportServer `yaml:"servers"`
+}
+
+// LoadReport reads, interpolates ${ENV} references, applies defaults, and validates.
+func LoadReport(path string) (*ReportConfig, error) {
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	var cfg ReportConfig
+	if err := yaml.Unmarshal(raw, &cfg); err != nil {
+		return nil, fmt.Errorf("parse report config: %w", err)
+	}
+	dsn, err := interpolate(cfg.Database.DSN)
+	if err != nil {
+		return nil, fmt.Errorf("database dsn: %w", err)
+	}
+	cfg.Database.DSN = dsn
+	for i := range cfg.Servers {
+		s := &cfg.Servers[i]
+		pw, err := interpolate(s.Password)
+		if err != nil {
+			return nil, fmt.Errorf("server %s password: %w", s.Name, err)
+		}
+		s.Password = pw
+		if s.PasswordFile != "" && s.Password == "" {
+			b, err := os.ReadFile(s.PasswordFile)
+			if err != nil {
+				return nil, fmt.Errorf("server %s passwordFile: %w", s.Name, err)
+			}
+			s.Password = strings.TrimSpace(string(b))
+		}
+		if s.Tenant == "" {
+			s.Tenant = s.Name
+		}
+	}
+	if cfg.Capture.Interval == 0 {
+		cfg.Capture.Interval = time.Hour
+	}
+	if cfg.Capture.Timeout == 0 {
+		cfg.Capture.Timeout = 5 * time.Minute
+	}
+	if cfg.Capture.RetentionDays == 0 {
+		cfg.Capture.RetentionDays = 400
+	}
+	if cfg.Database.DSN == "" {
+		return nil, fmt.Errorf("database.dsn is required")
+	}
+	if len(cfg.Servers) == 0 {
+		return nil, fmt.Errorf("no servers configured")
+	}
+	return &cfg, nil
+}
