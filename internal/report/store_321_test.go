@@ -52,3 +52,45 @@ func TestRule321Rows(t *testing.T) {
 		t.Errorf("a_fail = %+v, want all false", f)
 	}
 }
+
+func TestComplianceRowsAndSummary(t *testing.T) {
+	st := newTestStore(t)
+	ctx := context.Background()
+	exec := func(sql string, args ...any) {
+		t.Helper()
+		if _, err := st.pool.Exec(ctx, sql, args...); err != nil {
+			t.Fatalf("exec: %v", err)
+		}
+	}
+	// Default target so the compliance view resolves; one compliant, one copies-failing asset.
+	if err := st.UpsertSLATargets(ctx, []SLATarget{
+		{Tenant: "acme", RPOSeconds: 86400, RetentionDays: 30, MinCopies: 2, GraceSeconds: 14400, Source: "default"},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	exec(`INSERT INTO assets (id,tenant,server,name,type,protection_status,last_available_copy_time,policy_name,updated_at,captured_at) VALUES
+	      ('ok','acme','s1','ok','VMWARE_VIRTUAL_MACHINE','PROTECTED', now()-interval '1 hour','',now(),now()),
+	      ('cop','acme','s1','cop','VMWARE_VIRTUAL_MACHINE','PROTECTED', now()-interval '1 hour','',now(),now())`)
+	exec(`INSERT INTO copies (id,tenant,server,asset_id,create_time,retention_time,captured_at) VALUES
+	      ('o1','acme','s1','ok', now()-interval '1 hour', now()+interval '31 days', now()),
+	      ('o2','acme','s1','ok', now()-interval '2 hours', now()+interval '31 days', now()),
+	      ('p1','acme','s1','cop', now()-interval '1 hour', now()+interval '31 days', now())`)
+
+	cr, err := st.ComplianceRows(ctx, "acme")
+	if err != nil {
+		t.Fatalf("ComplianceRows: %v", err)
+	}
+	if len(cr) != 2 {
+		t.Fatalf("compliance rows = %d, want 2", len(cr))
+	}
+	sum, err := st.ReportSummary(ctx, "acme")
+	if err != nil {
+		t.Fatalf("ReportSummary: %v", err)
+	}
+	if sum.TotalAssets != 2 || sum.CompliantAssets != 1 || sum.CopiesFailures != 1 {
+		t.Errorf("summary = %+v, want total 2 / compliant 1 / copiesFail 1", sum)
+	}
+	if sum.BadgePass { // no asset has 3 copies / 2 media -> badge fails
+		t.Errorf("badge should be false, got %+v", sum)
+	}
+}

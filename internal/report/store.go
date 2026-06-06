@@ -215,6 +215,57 @@ func (s *Store) Rule321Rows(ctx context.Context, tenant string) ([]Rule321Row, e
 	return out, rows.Err()
 }
 
+// ComplianceRow is one asset's SLA verdict from the compliance view.
+type ComplianceRow struct {
+	AssetID, AssetName, AssetType, PolicyName string
+	RPOOk, RetentionOk, CopiesOk, Compliant   bool
+	Reasons                                   string
+}
+
+// ComplianceRows returns a tenant's per-asset SLA verdicts (non-compliant first).
+func (s *Store) ComplianceRows(ctx context.Context, tenant string) ([]ComplianceRow, error) {
+	rows, err := s.pool.Query(ctx,
+		`SELECT asset_id, asset_name, asset_type, policy_name, rpo_ok, retention_ok, copies_ok,
+		        compliant, reasons
+		 FROM compliance WHERE tenant=$1 ORDER BY compliant, asset_name`, tenant)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []ComplianceRow
+	for rows.Next() {
+		var r ComplianceRow
+		if err := rows.Scan(&r.AssetID, &r.AssetName, &r.AssetType, &r.PolicyName,
+			&r.RPOOk, &r.RetentionOk, &r.CopiesOk, &r.Compliant, &r.Reasons); err != nil {
+			return nil, err
+		}
+		out = append(out, r)
+	}
+	return out, rows.Err()
+}
+
+// Summary is the report's headline tally for a tenant.
+type Summary struct {
+	TotalAssets, CompliantAssets                   int
+	RPOFailures, RetentionFailures, CopiesFailures int
+	BadgePass                                      bool // every asset passes 3-2-1-1-0
+}
+
+// ReportSummary computes the headline counts for a tenant in one round-trip.
+func (s *Store) ReportSummary(ctx context.Context, tenant string) (Summary, error) {
+	var sm Summary
+	err := s.pool.QueryRow(ctx, `SELECT
+		 (SELECT count(*) FROM compliance WHERE tenant=$1),
+		 (SELECT count(*) FROM compliance WHERE tenant=$1 AND compliant),
+		 (SELECT count(*) FROM compliance WHERE tenant=$1 AND NOT rpo_ok),
+		 (SELECT count(*) FROM compliance WHERE tenant=$1 AND NOT retention_ok),
+		 (SELECT count(*) FROM compliance WHERE tenant=$1 AND NOT copies_ok),
+		 COALESCE((SELECT bool_and(rule_pass) FROM rule_321110 WHERE tenant=$1), false)`,
+		tenant).Scan(&sm.TotalAssets, &sm.CompliantAssets, &sm.RPOFailures,
+		&sm.RetentionFailures, &sm.CopiesFailures, &sm.BadgePass)
+	return sm, err
+}
+
 // CapturedPolicy is a stored protection policy: its name plus the raw objectives JSON.
 type CapturedPolicy struct {
 	Name       string
