@@ -57,7 +57,7 @@ type Retention struct {
 func (r Retention) DaysFor(tenant string) int
 ```
 
-`Retention Retention \`yaml:"retention"\`` on `ReportConfig`. In `LoadReport`, after the capture
+A `retention` field (Go type `Retention`) on `ReportConfig`. In `LoadReport`, after the capture
 defaults: if `cfg.Retention.DefaultDays == 0`, set it to `cfg.Capture.RetentionDays` (which is itself
 already defaulted to 400). Then validate `DefaultDays > 0` (after the fallback) and that each override
 has a non-empty `Tenant` and `Days > 0`. Empty `retention` block ⇒ `DefaultDays` =

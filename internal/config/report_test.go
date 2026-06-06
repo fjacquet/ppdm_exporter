@@ -317,6 +317,7 @@ func TestLoadReportRetentionValidation(t *testing.T) {
 		"override days 0":  base + "retention:\n  overrides:\n    - {tenant: a, days: 0}\n",
 		"empty tenant":     base + "retention:\n  overrides:\n    - {tenant: \"\", days: 30}\n",
 		"negative default": base + "retention:\n  defaultDays: -5\n",
+		"duplicate tenant": base + "retention:\n  overrides:\n    - {tenant: a, days: 30}\n    - {tenant: a, days: 60}\n",
 	}
 	for name, y := range cases {
 		dir := t.TempDir()

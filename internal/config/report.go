@@ -199,6 +199,7 @@ func LoadReport(path string) (*ReportConfig, error) {
 	if cfg.Retention.DefaultDays <= 0 {
 		return nil, fmt.Errorf("retention.defaultDays must be > 0")
 	}
+	seen := make(map[string]bool, len(cfg.Retention.Overrides))
 	for i, o := range cfg.Retention.Overrides {
 		if o.Tenant == "" {
 			return nil, fmt.Errorf("retention override %d: tenant required", i)
@@ -206,6 +207,10 @@ func LoadReport(path string) (*ReportConfig, error) {
 		if o.Days <= 0 {
 			return nil, fmt.Errorf("retention override %d (%s): days must be > 0", i, o.Tenant)
 		}
+		if seen[o.Tenant] {
+			return nil, fmt.Errorf("retention override %d: duplicate tenant %q", i, o.Tenant)
+		}
+		seen[o.Tenant] = true
 	}
 	if cfg.Compliance.Grace == 0 {
 		cfg.Compliance.Grace = 4 * time.Hour
