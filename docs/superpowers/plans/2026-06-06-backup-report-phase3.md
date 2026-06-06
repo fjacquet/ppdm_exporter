@@ -1269,7 +1269,7 @@ func formatExtHTTP(format string) (string, error) {
 ```
 
 > `errUnsupportedFormat` is already declared in `data.go` (Task 4), so `http.go` reuses it.
-
+>
 > Note: the CSP allows `style-src 'unsafe-inline'` because the HTML report uses an inline `<style>` block; everything else is `'none'`. The PDF response is binary and unaffected.
 
 - [ ] **Step 4: Run test to verify it passes**
@@ -1332,7 +1332,7 @@ report:
 
 Append a section:
 
-```markdown
+````markdown
 ## Assurance report (Phase 3)
 
 Render a tenant's current-snapshot report — SLA compliance verdicts plus a 3-2-1-1-0
@@ -1352,7 +1352,7 @@ curl 'http://127.0.0.1:9103/report?tenant=acme-corp&format=html'
 
 > The 3-2-1-1-0 “2 media” and “1 offsite” checks are best-effort heuristics over provisional
 > PPDM copy fields (`storage_system_id`, `location`); the report labels them as such.
-```
+````
 
 - [ ] **Step 3: Add a CHANGELOG entry**
 

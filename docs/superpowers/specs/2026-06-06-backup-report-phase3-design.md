@@ -31,7 +31,7 @@ multi-tenant auth/RBAC, historical trends, ISO/SOC2 narrative mapping (all Phase
 
 One data model assembled from SQL, rendered two ways, exposed two ways:
 
-```
+```text
 compliance view ─┐
 rule_321110 view ─┼─► report.Store read methods ─► render.Build(ctx, store, tenant) ─► ReportData
 summary counts  ─┘                                                            │
@@ -98,9 +98,10 @@ Typed, parameterized (mirroring Phase 2's `$1..$N` discipline), all filtered by 
   - Binds **`127.0.0.1`** by default. Optional **bearer token** (`report.authToken`): when set,
     requests need `Authorization: Bearer <token>` (constant-time compare) else 401; when empty, no
     auth (localhost-only posture, documented).
-  - Sets baseline security headers (`X-Content-Type-Options: nosniff`,
-    `Content-Security-Policy: default-src 'none'`, `Cache-Control: no-store`) and the right
-    `Content-Type` per format. Gets its own `/security-review` pass before merge.
+  - Sets baseline security headers (`X-Content-Type-Options: nosniff`, `Cache-Control: no-store`,
+    and `Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'` — `style-src` is
+    needed for the HTML report's inline `<style>`) and the right `Content-Type` per format. Gets
+    its own `/security-review` pass before merge.
 
 ### 5. Config additions (`internal/config/report.go`)
 
@@ -119,7 +120,8 @@ All optional with defaults; `${ENV}` interpolation on `authToken` via the existi
 - `render` CLI: a tenant with no assets → clear non-zero-exit error; DB/render errors propagate.
 - HTTP: missing/empty `tenant` → 400; unknown tenant → 404; bad/missing token (when configured) → 401;
   render error → 500 (logged, generic body). The endpoint never blocks or crashes the capture loop —
-  it runs in its own server goroutine; a handler panic is recovered.
+  it runs in its own server goroutine; a handler panic is contained by net/http's built-in
+  per-request recovery (logged, that connection dropped) and never takes down the process.
 - PDF/HTML render failures are returned, not partial-written (render to a buffer, then copy on success).
 
 ## Testing (TDD)

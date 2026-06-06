@@ -15,7 +15,8 @@ func TestHandlerServesReport(t *testing.T) {
 	srv := httptest.NewServer(h)
 	defer srv.Close()
 
-	resp, err := http.Get(srv.URL + "/report?tenant=acme&format=html")
+	req, _ := http.NewRequestWithContext(t.Context(), http.MethodGet, srv.URL+"/report?tenant=acme&format=html", nil)
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -38,7 +39,7 @@ func TestHandlerValidation(t *testing.T) {
 	defer srv.Close()
 
 	doResp := func(path string, bearer string) *http.Response {
-		req, _ := http.NewRequest(http.MethodGet, srv.URL+path, nil)
+		req, _ := http.NewRequestWithContext(t.Context(), http.MethodGet, srv.URL+path, nil)
 		if bearer != "" {
 			req.Header.Set("Authorization", "Bearer "+bearer)
 		}
@@ -81,7 +82,8 @@ func TestHandlerRejectsNonGET(t *testing.T) {
 	st := reporttest.NewStore(t)
 	srv := httptest.NewServer(NewHandler(st, "B", ""))
 	defer srv.Close()
-	resp, _ := http.Post(srv.URL+"/report?tenant=acme", "", nil)
+	req, _ := http.NewRequestWithContext(t.Context(), http.MethodPost, srv.URL+"/report?tenant=acme", nil)
+	resp, _ := http.DefaultClient.Do(req)
 	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusMethodNotAllowed {
 		t.Errorf("POST -> %d, want 405", resp.StatusCode)
