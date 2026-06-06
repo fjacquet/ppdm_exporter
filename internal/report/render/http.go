@@ -2,12 +2,9 @@ package render
 
 import (
 	"bytes"
-	"crypto/sha256"
-	"crypto/subtle"
 	"errors"
 	"io"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/fjacquet/ppdm_exporter/internal/report"
@@ -15,13 +12,9 @@ import (
 )
 
 // NewHandler returns the read-only report HTTP surface: GET /report?tenant=&format= and
-// GET /healthz. When authToken is non-empty, /report requires a matching Bearer token.
-func NewHandler(st *report.Store, brand, authToken string) http.Handler {
-	requireAuth := authToken != ""
-	var wantHash [32]byte
-	if requireAuth {
-		wantHash = sha256.Sum256([]byte(authToken)) // hash the static token once, not per request
-	}
+// GET /healthz. authz enforces per-tenant access; when no tokens are configured it is a no-op
+// (the endpoint is open — localhost posture).
+func NewHandler(st *report.Store, brand string, authz *Authorizer) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
 		secureHeaders(w)
@@ -33,14 +26,23 @@ func NewHandler(st *report.Store, brand, authToken string) http.Handler {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 			return
 		}
-		if requireAuth && !bearerOK(r, wantHash) {
-			w.Header().Set("WWW-Authenticate", "Bearer")
-			http.Error(w, "unauthorized", http.StatusUnauthorized)
-			return
+		var scope Scope
+		if authz.Required() {
+			s, ok := authz.Authenticate(r)
+			if !ok {
+				w.Header().Set("WWW-Authenticate", "Bearer")
+				http.Error(w, "unauthorized", http.StatusUnauthorized)
+				return
+			}
+			scope = s
 		}
 		tenant := r.URL.Query().Get("tenant")
 		if tenant == "" {
 			http.Error(w, "tenant is required", http.StatusBadRequest)
+			return
+		}
+		if authz.Required() && !authz.Allows(scope, tenant) {
+			http.Error(w, "forbidden", http.StatusForbidden)
 			return
 		}
 		ext, err := FormatExt(r.URL.Query().Get("format"))
@@ -61,7 +63,6 @@ func NewHandler(st *report.Store, brand, authToken string) http.Handler {
 		if ext == "pdf" {
 			renderFn, contentType = RenderPDF, "application/pdf"
 		}
-		// Render to a buffer first so a render error never yields a half-written 200 body.
 		var buf bytes.Buffer
 		if err := renderFn(&buf, data); err != nil {
 			log.WithError(err).Warn("render report failed")
@@ -86,18 +87,6 @@ func secureHeaders(w http.ResponseWriter) {
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.Header().Set("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'")
 	w.Header().Set("Cache-Control", "no-store")
-}
-
-// bearerOK compares the request's Bearer token against the precomputed token hash in constant
-// time. Hashing both sides to a fixed 32 bytes avoids leaking the configured token's length.
-func bearerOK(r *http.Request, wantHash [32]byte) bool {
-	h := r.Header.Get("Authorization")
-	got := strings.TrimPrefix(h, "Bearer ")
-	if got == h { // "Bearer " prefix absent
-		return false
-	}
-	gotHash := sha256.Sum256([]byte(got))
-	return subtle.ConstantTimeCompare(gotHash[:], wantHash[:]) == 1
 }
 
 // FormatExt validates an output format and returns its file extension ("" defaults to html).

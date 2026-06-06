@@ -64,7 +64,12 @@ func run(cfgPath string, once, debug bool) error {
 	}
 
 	if cfg.Report.Listen != "" {
-		h := render.NewHandler(store, cfg.Report.BrandName, cfg.Report.AuthToken)
+		scopes := make([]render.TokenScope, 0, len(cfg.Report.Tokens))
+		for _, t := range cfg.Report.Tokens {
+			scopes = append(scopes, render.TokenScope{Token: t.Token, Tenants: t.Tenants})
+		}
+		authz := render.NewAuthorizer(cfg.Report.AuthToken, scopes)
+		h := render.NewHandler(store, cfg.Report.BrandName, authz)
 		srv := &http.Server{Addr: cfg.Report.Listen, Handler: h, ReadHeaderTimeout: 5 * time.Second}
 		go func() {
 			log.WithField("addr", cfg.Report.Listen).Info("serving report endpoint")

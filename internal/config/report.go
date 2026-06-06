@@ -54,11 +54,18 @@ type Compliance struct {
 	Overrides []ComplianceOverride `yaml:"overrides"`
 }
 
+// ReportToken authorizes a bearer token to read the named tenants' reports ("*" = all).
+type ReportToken struct {
+	Token   string   `yaml:"token"`
+	Tenants []string `yaml:"tenants"`
+}
+
 // ReportOutput configures Phase 3 report generation: the optional HTTP endpoint and branding.
 type ReportOutput struct {
-	Listen    string `yaml:"listen"`    // empty = CLI-only (no HTTP endpoint)
-	AuthToken string `yaml:"authToken"` // optional bearer; empty = no auth (localhost posture)
-	BrandName string `yaml:"brandName"`
+	Listen    string        `yaml:"listen"`    // empty = CLI-only (no HTTP endpoint)
+	AuthToken string        `yaml:"authToken"` // optional bearer; empty = no auth (localhost posture)
+	BrandName string        `yaml:"brandName"`
+	Tokens    []ReportToken `yaml:"tokens"`
 }
 
 // SMTP configures outbound email delivery for scheduled reports.
@@ -181,6 +188,19 @@ func LoadReport(path string) (*ReportConfig, error) {
 	cfg.Report.AuthToken = token
 	if cfg.Report.BrandName == "" {
 		cfg.Report.BrandName = "Backup Assurance Report"
+	}
+	for i := range cfg.Report.Tokens {
+		tok, err := interpolate(cfg.Report.Tokens[i].Token)
+		if err != nil {
+			return nil, fmt.Errorf("report token %d: %w", i, err)
+		}
+		cfg.Report.Tokens[i].Token = tok
+		if tok == "" {
+			return nil, fmt.Errorf("report token %d: token is required", i)
+		}
+		if len(cfg.Report.Tokens[i].Tenants) == 0 {
+			return nil, fmt.Errorf("report token %d: tenants required", i)
+		}
 	}
 	smtpUser, err := interpolate(cfg.SMTP.Username)
 	if err != nil {
