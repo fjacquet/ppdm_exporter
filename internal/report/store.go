@@ -4,6 +4,7 @@ import (
 	"context"
 	_ "embed"
 	"encoding/json"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -307,5 +308,27 @@ func (s *Store) FinishRun(ctx context.Context, id int64, ok bool, errMsg string,
 	_, err := s.pool.Exec(ctx,
 		`UPDATE capture_runs SET finished_at=now(), ok=$2, error=$3, counts=$4 WHERE id=$1`,
 		id, ok, errMsg, cj)
+	return err
+}
+
+// DeliveryExists reports whether a SUCCESSFUL report delivery is already recorded for the
+// (tenant, period) occurrence. Failed attempts return false so the scheduler retries them.
+func (s *Store) DeliveryExists(ctx context.Context, tenant, period string) (bool, error) {
+	var exists bool
+	err := s.pool.QueryRow(ctx,
+		`SELECT EXISTS(SELECT 1 FROM report_deliveries WHERE tenant=$1 AND period=$2 AND ok)`,
+		tenant, period).Scan(&exists)
+	return exists, err
+}
+
+// RecordDelivery idempotently upserts the outcome of a delivery attempt for (tenant, period);
+// a later success overwrites an earlier failure.
+func (s *Store) RecordDelivery(ctx context.Context, tenant, period string, ok bool, errMsg string, recipients []string) error {
+	_, err := s.pool.Exec(ctx,
+		`INSERT INTO report_deliveries (tenant, period, sent_at, ok, error, recipients)
+		 VALUES ($1,$2, now(), $3,$4,$5)
+		 ON CONFLICT (tenant, period) DO UPDATE SET sent_at=now(), ok=EXCLUDED.ok,
+		  error=EXCLUDED.error, recipients=EXCLUDED.recipients`,
+		tenant, period, ok, errMsg, strings.Join(recipients, ","))
 	return err
 }

@@ -178,3 +178,16 @@ SELECT tenant, server, asset_id, asset_name, asset_type,
   ((copies_count >= 3) AND (distinct_media >= 2) AND (distinct_locations >= 2)
     AND has_immutable AND errors_ok) AS rule_pass
 FROM per_asset;
+
+-- Phase 4a: provenance + dedupe for scheduled report deliveries. One row per (tenant, period
+-- occurrence); a failed attempt is overwritten by a later success, and DeliveryExists counts only
+-- successes so failures retry until the occurrence's period rolls over.
+CREATE TABLE IF NOT EXISTS report_deliveries (
+  tenant text NOT NULL,
+  period text NOT NULL,
+  sent_at timestamptz NOT NULL DEFAULT now(),
+  ok boolean NOT NULL,
+  error text,
+  recipients text,
+  PRIMARY KEY (tenant, period)
+);
