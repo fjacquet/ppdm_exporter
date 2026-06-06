@@ -15,7 +15,9 @@ import (
 	"github.com/fjacquet/ppdm_exporter/internal/config"
 	"github.com/fjacquet/ppdm_exporter/internal/ppdmclient"
 	"github.com/fjacquet/ppdm_exporter/internal/report"
+	"github.com/fjacquet/ppdm_exporter/internal/report/delivery"
 	"github.com/fjacquet/ppdm_exporter/internal/report/render"
+	"github.com/fjacquet/ppdm_exporter/internal/report/schedule"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -77,6 +79,16 @@ func run(cfgPath string, once, debug bool) error {
 				log.WithError(err).Warn("report endpoint shutdown")
 			}
 		}()
+	}
+
+	if !once && len(cfg.Schedules) > 0 {
+		deliverer, derr := delivery.NewSMTP(cfg.SMTP)
+		if derr != nil {
+			return derr
+		}
+		sched := schedule.New(store, deliverer, cfg.Schedules, cfg.Report.BrandName)
+		go sched.Run(ctx)
+		log.WithField("schedules", len(cfg.Schedules)).Info("report scheduler started")
 	}
 
 	servers := make([]report.ServerClient, 0, len(cfg.Servers))
