@@ -19,3 +19,13 @@ servers:
 report:
   listen: "0.0.0.0:9103"
   brandName: "Acme Backup Assurance"
+smtp:
+  host: mailpit
+  port: 1025
+  from: "assurance@demo.local"
+  starttls: false        # demo sink: no TLS/auth (Mailpit). NEVER do this in production.
+schedules:
+  - tenant: acme-corp
+    cadence: daily
+    hour: 0              # 00:00 UTC -> always "due" in the demo, sends on first tick
+    recipients: [ops@acme-corp.demo]

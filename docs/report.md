@@ -78,3 +78,19 @@ curl 'http://127.0.0.1:9103/report?tenant=acme-corp&format=html'
 
 > The 3-2-1-1-0 "2 media" and "1 offsite" checks are best-effort heuristics over provisional
 > PPDM copy fields (`storage_system_id`, `location`); the report labels them as such.
+
+## Scheduled delivery (Phase 4a)
+
+Configure SMTP and per-tenant schedules; the report process emails each tenant's report
+(HTML body + PDF attachment) on its cadence (daily/weekly/monthly + hour, UTC):
+
+```yaml
+smtp: {host: smtp.example.com, port: 587, from: assurance@example.com,
+       username: "${SMTP_USER}", password: "${SMTP_PASSWORD}", starttls: true}
+schedules:
+  - {tenant: acme-corp, cadence: weekly, weekday: Mon, hour: 6, recipients: [ops@acme.com]}
+```
+
+Deliveries are recorded in `report_deliveries` (one row per tenant+occurrence); a restart near
+the send time won't re-send, and a failed send retries on the next minute-tick until it succeeds.
+In the demo, sent mail appears in **Mailpit** at `http://localhost:8025`.

@@ -61,6 +61,26 @@ type ReportOutput struct {
 	BrandName string `yaml:"brandName"`
 }
 
+// SMTP configures outbound email delivery for scheduled reports.
+type SMTP struct {
+	Host     string `yaml:"host"`
+	Port     int    `yaml:"port"` // defaults to 587
+	From     string `yaml:"from"`
+	Username string `yaml:"username"`
+	Password string `yaml:"password"`
+	StartTLS bool   `yaml:"starttls"`
+}
+
+// Schedule is one per-tenant report cadence. Times are UTC.
+type Schedule struct {
+	Tenant     string   `yaml:"tenant"`
+	Cadence    string   `yaml:"cadence"` // daily | weekly | monthly
+	Weekday    string   `yaml:"weekday"` // weekly only (Mon..Sun)
+	Day        int      `yaml:"day"`     // monthly only (1..31, clamped to month length)
+	Hour       int      `yaml:"hour"`    // 0..23
+	Recipients []string `yaml:"recipients"`
+}
+
 // ReportConfig is the cmd/report configuration.
 type ReportConfig struct {
 	Database struct {
@@ -74,6 +94,30 @@ type ReportConfig struct {
 	Servers    []ReportServer `yaml:"servers"`
 	Compliance Compliance     `yaml:"compliance"`
 	Report     ReportOutput   `yaml:"report"`
+	SMTP       SMTP           `yaml:"smtp"`
+	Schedules  []Schedule     `yaml:"schedules"`
+}
+
+// ParseWeekday maps a 3-letter day abbreviation (case-insensitive) to a time.Weekday.
+func ParseWeekday(s string) (time.Weekday, error) {
+	switch strings.ToLower(s) {
+	case "sun":
+		return time.Sunday, nil
+	case "mon":
+		return time.Monday, nil
+	case "tue":
+		return time.Tuesday, nil
+	case "wed":
+		return time.Wednesday, nil
+	case "thu":
+		return time.Thursday, nil
+	case "fri":
+		return time.Friday, nil
+	case "sat":
+		return time.Saturday, nil
+	default:
+		return 0, fmt.Errorf("invalid weekday %q (want Mon..Sun)", s)
+	}
 }
 
 // LoadReport reads, interpolates ${ENV} references, applies defaults, and validates.
@@ -137,6 +181,45 @@ func LoadReport(path string) (*ReportConfig, error) {
 	cfg.Report.AuthToken = token
 	if cfg.Report.BrandName == "" {
 		cfg.Report.BrandName = "Backup Assurance Report"
+	}
+	smtpUser, err := interpolate(cfg.SMTP.Username)
+	if err != nil {
+		return nil, fmt.Errorf("smtp username: %w", err)
+	}
+	cfg.SMTP.Username = smtpUser
+	smtpPass, err := interpolate(cfg.SMTP.Password)
+	if err != nil {
+		return nil, fmt.Errorf("smtp password: %w", err)
+	}
+	cfg.SMTP.Password = smtpPass
+	if len(cfg.Schedules) > 0 {
+		if cfg.SMTP.Port == 0 {
+			cfg.SMTP.Port = 587
+		}
+		if cfg.SMTP.Host == "" || cfg.SMTP.From == "" {
+			return nil, fmt.Errorf("smtp.host and smtp.from are required when schedules are set")
+		}
+		for i, s := range cfg.Schedules {
+			switch s.Cadence {
+			case "daily", "weekly", "monthly":
+			default:
+				return nil, fmt.Errorf("schedule %d: invalid cadence %q (want daily|weekly|monthly)", i, s.Cadence)
+			}
+			if s.Hour < 0 || s.Hour > 23 {
+				return nil, fmt.Errorf("schedule %d: hour %d out of range 0..23", i, s.Hour)
+			}
+			if len(s.Recipients) == 0 {
+				return nil, fmt.Errorf("schedule %d (%s): recipients required", i, s.Tenant)
+			}
+			if s.Cadence == "weekly" {
+				if _, err := ParseWeekday(s.Weekday); err != nil {
+					return nil, fmt.Errorf("schedule %d: %w", i, err)
+				}
+			}
+			if s.Cadence == "monthly" && (s.Day < 1 || s.Day > 31) {
+				return nil, fmt.Errorf("schedule %d: day %d out of range 1..31", i, s.Day)
+			}
+		}
 	}
 	if cfg.Database.DSN == "" {
 		return nil, fmt.Errorf("database.dsn is required")

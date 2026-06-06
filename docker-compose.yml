@@ -83,6 +83,13 @@ services:
       start_period: 10s
     restart: unless-stopped
 
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: ppdm_mailpit
+    ports:
+      - "8025:8025"   # web UI; SMTP on 1025 is reachable in-network as mailpit:1025
+    restart: unless-stopped
+
   report:
     build:
       context: .
@@ -101,4 +108,6 @@ services:
         condition: service_started
       postgres:
         condition: service_healthy
+      mailpit:
+        condition: service_started
     restart: unless-stopped

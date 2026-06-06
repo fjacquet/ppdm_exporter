@@ -74,6 +74,7 @@ demo:
 	@echo "                 - 'PowerProtect — SLA Compliance'         (backup compliance verdicts)"
 	@echo "  Report HTML  http://localhost:9103/report?tenant=acme-corp"
 	@echo "  Report PDF   http://localhost:9103/report?tenant=acme-corp&format=pdf"
+	@echo "  Mailpit      http://localhost:8025  (scheduled reports land here)"
 	@echo "  Prometheus   http://localhost:9090"
 	@echo ""
 	@echo "The reporter captures every 30s — give it a moment after first start"
