@@ -34,4 +34,5 @@ All notable changes to this project are documented here. The format is based on
 
 ### Deferred
 - OTLP trace spans (diagnostic tracer manager) — metrics OTLP shipped; tracing is a follow-up.
-- Backup reporter Phases 2–4 (SLA evaluation, branded PDF/HTML report, scheduling/delivery).
+- Backup reporter Phase 4 (scheduling, delivery, multi-tenancy, retention-policy management).
+  SLA evaluation (Phase 2) and the branded PDF/HTML report (Phase 3) have shipped.
