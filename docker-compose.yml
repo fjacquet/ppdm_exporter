@@ -1,10 +1,15 @@
 ---
-# End-to-end demo stack — exporter BUILT FROM SOURCE.
-#   docker compose up --build      (or: make demo)
-# Then open Grafana at http://localhost:3000 (admin/admin) -> "PowerProtect Data Manager — Overview".
+# End-to-end demo stack — exporter + backup reporter BUILT FROM SOURCE.
+#   make demo            (brings it up detached and prints the URLs below; or: docker compose up --build)
+# Open:
+#   Grafana  http://localhost:3000 (admin/admin)
+#            - "PowerProtect Data Manager — Overview"  (live exporter metrics)
+#            - "PowerProtect — SLA Compliance"         (backup compliance over Postgres)
+#   Report   http://localhost:9103/report?tenant=acme-corp  (&format=pdf for PDF)
 #
-# Services: mockppdm (fake PPDM server) -> ppdm_exporter -> prometheus -> grafana.
-# mockppdm serves demo fixtures so the dashboard populates without real hardware.
+# Services: mockppdm (fake PPDM server) -> ppdm_exporter -> prometheus -> grafana, plus
+#   postgres + report (cmd/report captures history every 30s and serves the assurance report).
+# mockppdm serves demo fixtures so the dashboards/report populate without real hardware.
 services:
   mockppdm:
     build:
@@ -86,6 +91,9 @@ services:
     pull_policy: build
     container_name: ppdm_report
     command: ["--config", "/etc/report/config.report.yaml", "--debug"]
+    ports:
+      # On-demand assurance report: http://localhost:9103/report?tenant=acme-corp
+      - "9103:9103"
     volumes:
       - ./config.report.demo.yaml:/etc/report/config.report.yaml:ro
     depends_on:

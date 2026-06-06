@@ -9,7 +9,7 @@ CYCLONEDX_GOMOD_VERSION ?= latest
 GOVULNCHECK_VERSION     ?= latest
 
 .PHONY: tools tools-sbom cli report-cli test test-race test-coverage vet fmt fmt-check lint vuln sbom \
-        sure ci release release-snapshot docker run-cli clean clean-dist
+        sure ci release release-snapshot docker run-cli clean clean-dist demo demo-logs demo-down
 
 # --- tooling ---
 
@@ -61,10 +61,26 @@ run-cli: cli
 docker:
 	docker build -t ppdm_exporter:$(VERSION) .
 
-# End-to-end demo stack: mockppdm -> exporter -> Prometheus -> Grafana.
-# Grafana: http://localhost:3000 (admin/admin). Requires a running Docker daemon.
+# End-to-end demo stack: mockppdm -> exporter -> Prometheus -> Grafana, plus the backup
+# reporter (postgres + cmd/report) feeding the SLA Compliance dashboard and the on-demand
+# assurance report. Requires a running Docker daemon. Brings the stack up detached and prints
+# where to look; stop it with `make demo-down`.
 demo:
-	docker compose up --build
+	docker compose up -d --build
+	@echo ""
+	@echo "Demo stack is up. Open:"
+	@echo "  Grafana      http://localhost:3000  (admin/admin)"
+	@echo "                 - 'PowerProtect Data Manager — Overview'  (live exporter metrics)"
+	@echo "                 - 'PowerProtect — SLA Compliance'         (backup compliance verdicts)"
+	@echo "  Report HTML  http://localhost:9103/report?tenant=acme-corp"
+	@echo "  Report PDF   http://localhost:9103/report?tenant=acme-corp&format=pdf"
+	@echo "  Prometheus   http://localhost:9090"
+	@echo ""
+	@echo "The reporter captures every 30s — give it a moment after first start"
+	@echo "(the report endpoint returns 404 until the first capture cycle completes)."
+	@echo "Follow logs: make demo-logs   |   Stop: make demo-down"
+demo-logs:
+	docker compose logs -f
 demo-down:
 	docker compose down --remove-orphans
 
