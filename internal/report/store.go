@@ -157,6 +157,59 @@ func (s *Store) Prune(ctx context.Context, retentionDays int) error {
 	return err
 }
 
+// SLATarget is a resolved per-asset SLA target row (the only materialized Phase 2 state).
+type SLATarget struct {
+	Tenant        string
+	AssetType     string
+	PolicyName    string
+	RPOSeconds    int64
+	RetentionDays int
+	MinCopies     int
+	GraceSeconds  int64
+	Source        string // policy | override | default
+}
+
+// UpsertSLATargets idempotently writes resolved targets, keyed by (tenant, asset_type, policy_name).
+func (s *Store) UpsertSLATargets(ctx context.Context, targets []SLATarget) error {
+	b := &pgx.Batch{}
+	for _, t := range targets {
+		b.Queue(`INSERT INTO sla_targets
+			(tenant,asset_type,policy_name,rpo_seconds,retention_days,min_copies,grace_seconds,source,updated_at)
+			VALUES ($1,$2,$3,$4,$5,$6,$7,$8, now())
+			ON CONFLICT (tenant, asset_type, policy_name) DO UPDATE SET rpo_seconds=EXCLUDED.rpo_seconds,
+			 retention_days=EXCLUDED.retention_days, min_copies=EXCLUDED.min_copies,
+			 grace_seconds=EXCLUDED.grace_seconds, source=EXCLUDED.source, updated_at=EXCLUDED.updated_at`,
+			t.Tenant, t.AssetType, t.PolicyName, t.RPOSeconds, t.RetentionDays, t.MinCopies, t.GraceSeconds, t.Source)
+	}
+	return s.sendBatch(ctx, b, len(targets))
+}
+
+// CapturedPolicy is a stored protection policy: its name plus the raw objectives JSON.
+type CapturedPolicy struct {
+	Name       string
+	Objectives []byte
+}
+
+// CapturedPolicies returns a tenant's stored protection policies (across servers) for target
+// resolution. Targets are tenant-scoped (assets join by tenant+policy_name, not server).
+func (s *Store) CapturedPolicies(ctx context.Context, tenant string) ([]CapturedPolicy, error) {
+	rows, err := s.pool.Query(ctx,
+		`SELECT name, COALESCE(objectives, 'null'::jsonb) FROM protection_policies WHERE tenant=$1`, tenant)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []CapturedPolicy
+	for rows.Next() {
+		var p CapturedPolicy
+		if err := rows.Scan(&p.Name, &p.Objectives); err != nil {
+			return nil, err
+		}
+		out = append(out, p)
+	}
+	return out, rows.Err()
+}
+
 // StartRun opens a capture_runs row and returns its id.
 func (s *Store) StartRun(ctx context.Context, server, version string) (int64, error) {
 	var id int64
