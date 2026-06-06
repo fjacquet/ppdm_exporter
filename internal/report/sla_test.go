@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/fjacquet/ppdm_exporter/internal/config"
+	"github.com/fjacquet/ppdm_exporter/internal/ppdmclient"
 )
 
 func goldVMConfig() config.Compliance {
@@ -49,7 +50,7 @@ func TestResolveTargets(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	capt := NewCapturer(st, "v-test", 400)
+	capt := NewCapturer(st, "v-test", 400, config.Compliance{})
 	if err := capt.ResolveTargets(ctx, "acme", goldVMConfig()); err != nil {
 		t.Fatalf("ResolveTargets: %v", err)
 	}
@@ -68,6 +69,31 @@ func TestResolveTargets(t *testing.T) {
 	rpo, ret, minc, _, src, ok = target(t, st, "acme", "VMWARE_VIRTUAL_MACHINE", "")
 	if !ok || rpo != 43200 || ret != 30 || minc != 3 || src != "override" {
 		t.Errorf("override = rpo=%d ret=%d min=%d src=%s ok=%v", rpo, ret, minc, src, ok)
+	}
+}
+
+func TestCaptureServerResolvesTargets(t *testing.T) {
+	st := newTestStore(t)
+	m := ppdmclient.NewMock("ppdm01")
+	m.SetJSONPrefix("/api/v2/activities", `{"page":{"totalPages":1},"content":[]}`)
+	m.SetJSONPrefix("/api/v2/copies", `{"page":{"totalPages":1},"content":[]}`)
+	m.SetJSONPrefix("/api/v2/assets", `{"page":{"totalPages":1},"content":[
+		{"id":"v1","name":"vm","type":"VMWARE_VIRTUAL_MACHINE","protectionPolicy":{"name":"Gold-VM"}}]}`)
+	m.SetJSONPrefix("/api/v3/protection-policies", `{"page":{"totalPages":1},"content":[
+		{"id":"p1","name":"Gold-VM","objectives":[{"type":"BACKUP","schedule":{"interval":"PT24H"},"retention":{"interval":"P30D"}}]}]}`)
+
+	capt := NewCapturer(st, "v-test", 400, goldVMConfig())
+	if err := capt.CaptureServer(context.Background(), "acme", m); err != nil {
+		t.Fatalf("CaptureServer: %v", err)
+	}
+
+	// Capture must have resolved targets as a post-step: the Gold-VM policy row exists.
+	rpo, ret, _, _, src, ok := target(t, st, "acme", "", "Gold-VM")
+	if !ok || rpo != 86400 || ret != 30 || src != "policy" {
+		t.Errorf("policy target after capture = rpo=%d ret=%d src=%s ok=%v", rpo, ret, src, ok)
+	}
+	if _, _, _, _, _, ok := target(t, st, "acme", "", ""); !ok {
+		t.Error("default target row missing after capture")
 	}
 }
 

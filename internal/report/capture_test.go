@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/fjacquet/ppdm_exporter/internal/config"
 	"github.com/fjacquet/ppdm_exporter/internal/ppdmclient"
 )
 
@@ -20,7 +21,7 @@ func TestCaptureServerPersists(t *testing.T) {
 	m.SetJSONPrefix("/api/v3/protection-policies", `{"page":{"totalPages":1},"content":[
 		{"id":"p1","name":"Gold-VM","objectives":[{"type":"BACKUP"}]}]}`)
 
-	cap := NewCapturer(st, "v-test", 400)
+	cap := NewCapturer(st, "v-test", 400, config.Compliance{})
 	if err := cap.CaptureServer(context.Background(), "acme", m); err != nil {
 		t.Fatalf("CaptureServer: %v", err)
 	}
@@ -52,7 +53,7 @@ func TestCaptureServerIdempotentAcrossCycles(t *testing.T) {
 	m.SetJSONPrefix("/api/v2/assets", `{"page":{"totalPages":1},"content":[{"id":"a1","name":"vm-app01"}]}`)
 	m.SetJSONPrefix("/api/v3/protection-policies", `{"page":{"totalPages":1},"content":[{"id":"p1","name":"Gold-VM"}]}`)
 
-	cap := NewCapturer(st, "v-test", 400)
+	cap := NewCapturer(st, "v-test", 400, config.Compliance{})
 	ctx := context.Background()
 	for i := 0; i < 2; i++ {
 		if err := cap.CaptureServer(ctx, "acme", m); err != nil {
