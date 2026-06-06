@@ -13,12 +13,14 @@ servers:
     username: demo
     password: demo
     insecureSkipVerify: true
-# Demo only: the report endpoint is published on 0.0.0.0 with NO authToken so the browser/curl
-# demo works without a token. Do NOT use this posture in production — set authToken (a bearer
-# token) and bind 127.0.0.1 or a private interface.
+# Demo only: the report endpoint is published on 0.0.0.0 with a scoped demo bearer token
+# (demo-acme-token -> acme-corp). Use: curl -H 'Authorization: Bearer demo-acme-token' ...
+# In production use ${ENV} + a strong random token and bind 127.0.0.1 or a private interface.
 report:
   listen: "0.0.0.0:9103"
   brandName: "Acme Backup Assurance"
+  tokens:
+    - {token: "demo-acme-token", tenants: [acme-corp]}   # demo only — use ${ENV} + a strong token in prod
 smtp:
   host: mailpit
   port: 1025

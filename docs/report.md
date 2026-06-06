@@ -72,8 +72,8 @@ backup-rule badge — as branded HTML or pure-Go PDF:
 When `report.listen` is set, the capture process also serves the report read-only:
 
 ```bash
-curl 'http://127.0.0.1:9103/report?tenant=acme-corp&format=html'
-# with auth: -H "Authorization: Bearer $REPORT_TOKEN"
+curl -H "Authorization: Bearer $REPORT_TOKEN" 'http://127.0.0.1:9103/report?tenant=acme-corp&format=html'
+# (omit -H only if no tokens/authToken is configured — unauthenticated localhost posture)
 ```
 
 > The 3-2-1-1-0 "2 media" and "1 offsite" checks are best-effort heuristics over provisional
@@ -94,3 +94,23 @@ schedules:
 Deliveries are recorded in `report_deliveries` (one row per tenant+occurrence); a restart near
 the send time won't re-send, and a failed send retries on the next minute-tick until it succeeds.
 In the demo, sent mail appears in **Mailpit** at `http://localhost:8025`.
+
+### Per-tenant access (Phase 4b)
+
+Scope `/report` bearer tokens to tenants. `authToken` (if set) is an all-tenants admin token;
+each `tokens` entry grants its `token` access to the listed `tenants` (`"*"` = all):
+
+```yaml
+report:
+  authToken: "${ADMIN_TOKEN}"          # optional, all tenants
+  tokens:
+    - {token: "${ACME_TOKEN}", tenants: [acme-corp]}
+```
+
+```bash
+curl -H "Authorization: Bearer $ACME_TOKEN" '127.0.0.1:9103/report?tenant=acme-corp'  # 200
+curl -H "Authorization: Bearer $ACME_TOKEN" '127.0.0.1:9103/report?tenant=globex'     # 403
+curl '127.0.0.1:9103/report?tenant=acme-corp'                                          # 401 (token required)
+```
+
+When no `authToken` and no `tokens` are configured, the endpoint is unauthenticated (localhost posture).

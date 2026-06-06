@@ -11,6 +11,9 @@ All notable changes to this project are documented here. The format is based on
 - `cmd/report` Phase 4a: scheduled per-tenant report delivery — an in-process scheduler
   (daily/weekly/monthly + hour, UTC) emails each tenant's report (HTML + PDF attachment) over
   SMTP, deduped/audited via `report_deliveries`. Demo adds a Mailpit sink.
+- `cmd/report` Phase 4b: per-tenant `/report` access control — `report.tokens` scope each bearer
+  token to specific tenants (`authToken` = all-tenants admin); an out-of-scope token gets 403
+  before any data access. No new dependencies.
 
 ## [1.0.0] - 2026-06-06
 
