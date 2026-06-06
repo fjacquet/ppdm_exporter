@@ -41,7 +41,7 @@ func TestRule321Rows(t *testing.T) {
 		t.Fatalf("rows = %d, want 2", len(got))
 	}
 	p := got["a_pass"]
-	if !(p.CopiesOk && p.MediaOk && p.OffsiteOk && p.ImmutableOk && p.ErrorsOk && p.RulePass) {
+	if !p.CopiesOk || !p.MediaOk || !p.OffsiteOk || !p.ImmutableOk || !p.ErrorsOk || !p.RulePass {
 		t.Errorf("a_pass = %+v, want all true", p)
 	}
 	if p.CopiesCount != 3 || p.DistinctMedia != 2 || p.DistinctLocations != 2 {
