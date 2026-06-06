@@ -15,8 +15,8 @@ func TestParseISODuration(t *testing.T) {
 		{"P30D", 30 * day},
 		{"P1W", 7 * day},
 		{"PT12H30M", 12*time.Hour + 30*time.Minute},
-		{"P1M", 30 * day},      // months are an explicit ~30d approximation
-		{"P1Y", 365 * day},     // years are an explicit ~365d approximation
+		{"P1M", 30 * day},  // months are an explicit ~30d approximation
+		{"P1Y", 365 * day}, // years are an explicit ~365d approximation
 		{"PT45S", 45 * time.Second},
 		{"P1DT2H", day + 2*time.Hour},
 	}
