@@ -114,7 +114,7 @@ func (s *Store) sendBatch(ctx context.Context, b *pgx.Batch, n int) error {
 		return nil
 	}
 	br := s.pool.SendBatch(ctx, b)
-	defer br.Close()
+	defer func() { _ = br.Close() }()
 	for i := 0; i < n; i++ {
 		if _, err := br.Exec(); err != nil {
 			return err
