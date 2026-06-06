@@ -145,16 +145,29 @@ func (s *Store) watermark(ctx context.Context, q, server string) (time.Time, err
 	return *t, nil
 }
 
-// Prune deletes append-only event rows (backup_jobs, copies) older than retentionDays.
-// assets and protection_policies hold current upsert-latest state, not time-series events,
-// so they are intentionally not pruned here (a decommissioned asset's last-known row is
-// kept as part of the history until a future explicit reconciliation pass).
-func (s *Store) Prune(ctx context.Context, retentionDays int) error {
-	cutoff := time.Now().AddDate(0, 0, -retentionDays)
-	if _, err := s.pool.Exec(ctx, `DELETE FROM backup_jobs WHERE created_at < $1`, cutoff); err != nil {
+// Prune deletes append-only event rows (backup_jobs, copies) older than each tenant's retention
+// window: per-tenant for override tenants, then a default sweep for every other tenant. assets and
+// protection_policies hold current upsert-latest state and are intentionally not pruned.
+func (s *Store) Prune(ctx context.Context, defaultDays int, overrides map[string]int) error {
+	now := time.Now()
+	tenants := make([]string, 0, len(overrides))
+	for tenant, days := range overrides {
+		tenants = append(tenants, tenant)
+		cutoff := now.AddDate(0, 0, -days)
+		if _, err := s.pool.Exec(ctx, `DELETE FROM backup_jobs WHERE tenant=$1 AND created_at < $2`, tenant, cutoff); err != nil {
+			return err
+		}
+		if _, err := s.pool.Exec(ctx, `DELETE FROM copies WHERE tenant=$1 AND create_time < $2`, tenant, cutoff); err != nil {
+			return err
+		}
+	}
+	// Default sweep for all tenants not covered by an override. An empty `tenants` array makes
+	// `tenant <> ALL('{}')` true for every row, degenerating to a global prune at defaultDays.
+	defCutoff := now.AddDate(0, 0, -defaultDays)
+	if _, err := s.pool.Exec(ctx, `DELETE FROM backup_jobs WHERE tenant <> ALL($1::text[]) AND created_at < $2`, tenants, defCutoff); err != nil {
 		return err
 	}
-	_, err := s.pool.Exec(ctx, `DELETE FROM copies WHERE create_time < $1`, cutoff)
+	_, err := s.pool.Exec(ctx, `DELETE FROM copies WHERE tenant <> ALL($1::text[]) AND create_time < $2`, tenants, defCutoff)
 	return err
 }
 
