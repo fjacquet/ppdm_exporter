@@ -145,3 +145,36 @@ SELECT
   ], ',') AS reasons,
   rpo_seconds, retention_days, min_copies
 FROM evaluated;
+
+-- copies is correlated by (asset_id, server) from the compliance and rule_321110 views; the
+-- only other copies index is on (server, create_time), so add the one those joins actually use.
+CREATE INDEX IF NOT EXISTS idx_copies_asset_server ON copies (asset_id, server);
+
+-- Phase 3: 3-2-1-1-0 backup-rule badge, per asset, computed live (read-only) parallel to
+-- compliance. media (distinct storage_system_id) and offsite (distinct location) ride
+-- provisional copy fields, so the badge is best-effort and labelled as such in the report.
+CREATE OR REPLACE VIEW rule_321110 AS
+WITH per_asset AS (
+  -- One LEFT JOIN pass over copies yields all four copy aggregates (empty-string media/location
+  -- excluded from the distinct counts); a no-copies asset keeps a row with zero/false values.
+  SELECT a.tenant, a.server, a.id AS asset_id, a.name AS asset_name, a.type AS asset_type,
+    count(c.id)                                          AS copies_count,
+    count(DISTINCT NULLIF(c.storage_system_id, ''))      AS distinct_media,
+    count(DISTINCT NULLIF(c.location, ''))               AS distinct_locations,
+    COALESCE(bool_or(c.retention_lock), false)           AS has_immutable,
+    NOT EXISTS (SELECT 1 FROM backup_jobs j
+       WHERE j.asset_id = a.id AND j.server = a.server AND j.result_status = 'FAILED') AS errors_ok
+  FROM assets a
+  LEFT JOIN copies c ON c.asset_id = a.id AND c.server = a.server
+  GROUP BY a.tenant, a.server, a.id, a.name, a.type
+)
+SELECT tenant, server, asset_id, asset_name, asset_type,
+  copies_count, distinct_media, distinct_locations,
+  (copies_count >= 3)      AS copies_ok,
+  (distinct_media >= 2)    AS media_ok,
+  (distinct_locations >= 2) AS offsite_ok,
+  has_immutable            AS immutable_ok,
+  errors_ok,
+  ((copies_count >= 3) AND (distinct_media >= 2) AND (distinct_locations >= 2)
+    AND has_immutable AND errors_ok) AS rule_pass
+FROM per_asset;

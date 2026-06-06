@@ -54,6 +54,13 @@ type Compliance struct {
 	Overrides []ComplianceOverride `yaml:"overrides"`
 }
 
+// ReportOutput configures Phase 3 report generation: the optional HTTP endpoint and branding.
+type ReportOutput struct {
+	Listen    string `yaml:"listen"`    // empty = CLI-only (no HTTP endpoint)
+	AuthToken string `yaml:"authToken"` // optional bearer; empty = no auth (localhost posture)
+	BrandName string `yaml:"brandName"`
+}
+
 // ReportConfig is the cmd/report configuration.
 type ReportConfig struct {
 	Database struct {
@@ -66,6 +73,7 @@ type ReportConfig struct {
 	} `yaml:"capture"`
 	Servers    []ReportServer `yaml:"servers"`
 	Compliance Compliance     `yaml:"compliance"`
+	Report     ReportOutput   `yaml:"report"`
 }
 
 // LoadReport reads, interpolates ${ENV} references, applies defaults, and validates.
@@ -121,6 +129,14 @@ func LoadReport(path string) (*ReportConfig, error) {
 	}
 	if cfg.Compliance.Defaults.MinCopies == 0 {
 		cfg.Compliance.Defaults.MinCopies = 2
+	}
+	token, err := interpolate(cfg.Report.AuthToken)
+	if err != nil {
+		return nil, fmt.Errorf("report authToken: %w", err)
+	}
+	cfg.Report.AuthToken = token
+	if cfg.Report.BrandName == "" {
+		cfg.Report.BrandName = "Backup Assurance Report"
 	}
 	if cfg.Database.DSN == "" {
 		return nil, fmt.Errorf("database.dsn is required")

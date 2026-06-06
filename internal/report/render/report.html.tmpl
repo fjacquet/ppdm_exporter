@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<title>{{.BrandName}} — {{.Tenant}}</title>
+<style>
+  body{font-family:system-ui,Arial,sans-serif;margin:2rem;color:#1a1a1a}
+  h1{margin:0 0 .25rem} .muted{color:#666;font-size:.9rem}
+  .badge{display:inline-block;padding:.4rem .9rem;border-radius:.4rem;font-weight:700;color:#fff}
+  .pass{background:#1a7f37}.fail{background:#cf222e}
+  table{border-collapse:collapse;width:100%;margin:1rem 0}
+  th,td{border:1px solid #ddd;padding:.4rem .6rem;text-align:left;font-size:.9rem}
+  th{background:#f3f4f6} .ok{color:#1a7f37}.no{color:#cf222e}
+  @media print{body{margin:1rem}}
+</style></head><body>
+  <h1>{{.BrandName}}</h1>
+  <div class="muted">Tenant: {{.Tenant}} · Generated {{.GeneratedAt.Format "2006-01-02 15:04 MST"}}</div>
+
+  <h2>Summary</h2>
+  <p>Compliant assets: <strong>{{.Summary.CompliantAssets}}/{{.Summary.TotalAssets}}</strong>
+     ({{.CompliantPercent}}%) ·
+     3-2-1-1-0 badge: <span class="badge {{if .Summary.BadgePass}}pass{{else}}fail{{end}}">{{.BadgeText}}</span></p>
+
+  <h2>SLA compliance</h2>
+  <table><thead><tr><th>Asset</th><th>Type</th><th>Policy</th><th>RPO</th><th>Retention</th><th>Copies</th><th>Compliant</th><th>Reasons</th></tr></thead>
+  <tbody>{{range .Compliance}}
+    <tr><td>{{.AssetName}}</td><td>{{.AssetType}}</td><td>{{.PolicyName}}</td>
+      <td class="{{if .RPOOk}}ok{{else}}no{{end}}">{{if .RPOOk}}✓{{else}}✗{{end}}</td>
+      <td class="{{if .RetentionOk}}ok{{else}}no{{end}}">{{if .RetentionOk}}✓{{else}}✗{{end}}</td>
+      <td class="{{if .CopiesOk}}ok{{else}}no{{end}}">{{if .CopiesOk}}✓{{else}}✗{{end}}</td>
+      <td class="{{if .Compliant}}ok{{else}}no{{end}}">{{if .Compliant}}✓{{else}}✗{{end}}</td>
+      <td>{{.Reasons}}</td></tr>{{end}}
+  </tbody></table>
+
+  <h2>3-2-1-1-0 backup rule</h2>
+  <p class="muted">"2 media" and "1 offsite" are best-effort heuristics over provisional PPDM copy fields.</p>
+  <table><thead><tr><th>Asset</th><th>3 copies</th><th>2 media</th><th>1 offsite</th><th>1 immutable</th><th>0 errors</th><th>Rule</th></tr></thead>
+  <tbody>{{range .Rule321}}
+    <tr><td>{{.AssetName}}</td>
+      <td class="{{if .CopiesOk}}ok{{else}}no{{end}}">{{.CopiesCount}}</td>
+      <td class="{{if .MediaOk}}ok{{else}}no{{end}}">{{.DistinctMedia}}</td>
+      <td class="{{if .OffsiteOk}}ok{{else}}no{{end}}">{{.DistinctLocations}}</td>
+      <td class="{{if .ImmutableOk}}ok{{else}}no{{end}}">{{if .ImmutableOk}}✓{{else}}✗{{end}}</td>
+      <td class="{{if .ErrorsOk}}ok{{else}}no{{end}}">{{if .ErrorsOk}}✓{{else}}✗{{end}}</td>
+      <td class="{{if .RulePass}}ok{{else}}no{{end}}">{{if .RulePass}}PASS{{else}}FAIL{{end}}</td></tr>{{end}}
+  </tbody></table>
+</body></html>
