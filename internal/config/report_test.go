@@ -106,3 +106,42 @@ func TestLoadReportRejectsNoServers(t *testing.T) {
 		t.Fatal("expected error for no servers")
 	}
 }
+
+func TestLoadReportReportBlock(t *testing.T) {
+	t.Setenv("REPORT_TOKEN", "s3cret")
+	dir := t.TempDir()
+	path := filepath.Join(dir, "r.yaml")
+	yaml := `
+database: {dsn: "postgres://u@localhost/db"}
+servers:
+  - {name: ppdm01, host: h, username: u, password: p}
+report:
+  listen: "127.0.0.1:9103"
+  authToken: "${REPORT_TOKEN}"
+  brandName: "Acme Backup Assurance"
+`
+	if err := os.WriteFile(path, []byte(yaml), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := LoadReport(path)
+	if err != nil {
+		t.Fatalf("LoadReport: %v", err)
+	}
+	if cfg.Report.Listen != "127.0.0.1:9103" || cfg.Report.AuthToken != "s3cret" ||
+		cfg.Report.BrandName != "Acme Backup Assurance" {
+		t.Fatalf("report = %+v", cfg.Report)
+	}
+}
+
+func TestLoadReportReportBrandDefault(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "r.yaml")
+	_ = os.WriteFile(path, []byte("database: {dsn: x}\nservers:\n  - {name: p, host: h, username: u, password: p}\n"), 0o600)
+	cfg, err := LoadReport(path)
+	if err != nil {
+		t.Fatalf("LoadReport: %v", err)
+	}
+	if cfg.Report.BrandName != "Backup Assurance Report" {
+		t.Fatalf("default brand = %q", cfg.Report.BrandName)
+	}
+}
