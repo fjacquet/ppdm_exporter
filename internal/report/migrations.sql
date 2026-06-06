@@ -146,22 +146,27 @@ SELECT
   rpo_seconds, retention_days, min_copies
 FROM evaluated;
 
+-- copies is correlated by (asset_id, server) from the compliance and rule_321110 views; the
+-- only other copies index is on (server, create_time), so add the one those joins actually use.
+CREATE INDEX IF NOT EXISTS idx_copies_asset_server ON copies (asset_id, server);
+
 -- Phase 3: 3-2-1-1-0 backup-rule badge, per asset, computed live (read-only) parallel to
 -- compliance. media (distinct storage_system_id) and offsite (distinct location) ride
 -- provisional copy fields, so the badge is best-effort and labelled as such in the report.
 CREATE OR REPLACE VIEW rule_321110 AS
 WITH per_asset AS (
+  -- One LEFT JOIN pass over copies yields all four copy aggregates (empty-string media/location
+  -- excluded from the distinct counts); a no-copies asset keeps a row with zero/false values.
   SELECT a.tenant, a.server, a.id AS asset_id, a.name AS asset_name, a.type AS asset_type,
-    (SELECT count(*) FROM copies c WHERE c.asset_id = a.id AND c.server = a.server) AS copies_count,
-    (SELECT count(DISTINCT c.storage_system_id) FROM copies c
-       WHERE c.asset_id = a.id AND c.server = a.server AND c.storage_system_id <> '') AS distinct_media,
-    (SELECT count(DISTINCT c.location) FROM copies c
-       WHERE c.asset_id = a.id AND c.server = a.server AND c.location <> '') AS distinct_locations,
-    COALESCE((SELECT bool_or(c.retention_lock) FROM copies c
-       WHERE c.asset_id = a.id AND c.server = a.server), false) AS has_immutable,
+    count(c.id)                                          AS copies_count,
+    count(DISTINCT NULLIF(c.storage_system_id, ''))      AS distinct_media,
+    count(DISTINCT NULLIF(c.location, ''))               AS distinct_locations,
+    COALESCE(bool_or(c.retention_lock), false)           AS has_immutable,
     NOT EXISTS (SELECT 1 FROM backup_jobs j
        WHERE j.asset_id = a.id AND j.server = a.server AND j.result_status = 'FAILED') AS errors_ok
   FROM assets a
+  LEFT JOIN copies c ON c.asset_id = a.id AND c.server = a.server
+  GROUP BY a.tenant, a.server, a.id, a.name, a.type
 )
 SELECT tenant, server, asset_id, asset_name, asset_type,
   copies_count, distinct_media, distinct_locations,

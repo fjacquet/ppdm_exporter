@@ -73,7 +73,9 @@ func run(cfgPath string, once, debug bool) error {
 		defer func() {
 			shutCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
-			_ = srv.Shutdown(shutCtx)
+			if err := srv.Shutdown(shutCtx); err != nil {
+				log.WithError(err).Warn("report endpoint shutdown")
+			}
 		}()
 	}
 
@@ -103,25 +105,13 @@ func run(cfgPath string, once, debug bool) error {
 	return nil
 }
 
-// formatExt validates a --format value and returns its file extension. Empty defaults to html.
-func formatExt(format string) (string, error) {
-	switch format {
-	case "", "html":
-		return "html", nil
-	case "pdf":
-		return "pdf", nil
-	default:
-		return "", fmt.Errorf("unsupported format %q (want html or pdf)", format)
-	}
-}
-
 func renderCommand() *cobra.Command {
 	var cfgPath, tenant, format, out string
 	cmd := &cobra.Command{
 		Use:   "render",
 		Short: "Render a tenant's backup-assurance report (html or pdf) to a file",
 		RunE: func(_ *cobra.Command, _ []string) error {
-			ext, err := formatExt(format)
+			ext, err := render.FormatExt(format)
 			if err != nil {
 				return err
 			}

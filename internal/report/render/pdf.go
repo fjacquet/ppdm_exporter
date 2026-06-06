@@ -3,6 +3,7 @@ package render
 import (
 	"fmt"
 	"io"
+	"strconv"
 
 	"github.com/johnfercher/maroto/v2"
 	"github.com/johnfercher/maroto/v2/pkg/components/text"
@@ -58,8 +59,8 @@ func RenderPDF(w io.Writer, d ReportData) error {
 	for _, r := range d.Rule321 {
 		m.AddRow(5,
 			text.NewCol(4, r.AssetName),
-			text.NewCol(2, fmt.Sprintf("%d", r.CopiesCount)),
-			text.NewCol(2, fmt.Sprintf("%d", r.DistinctMedia)),
+			text.NewCol(2, strconv.Itoa(r.CopiesCount)),
+			text.NewCol(2, strconv.Itoa(r.DistinctMedia)),
 			text.NewCol(2, yn(r.ImmutableOk)),
 			text.NewCol(2, yn(r.RulePass)),
 		)
