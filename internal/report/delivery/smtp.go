@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/fjacquet/ppdm_exporter/internal/config"
+	log "github.com/sirupsen/logrus"
 	"github.com/wneessen/go-mail"
 )
 
@@ -23,6 +24,10 @@ func NewSMTP(cfg config.SMTP) (*SMTP, error) {
 	if cfg.StartTLS {
 		opts = append(opts, mail.WithTLSPortPolicy(mail.TLSMandatory))
 	} else {
+		// Plaintext transport: report body/PDF/recipients are sent in clear. go-mail's
+		// auto-discover still refuses PLAIN/LOGIN over an unencrypted link, so credentials
+		// are not exposed — but surface the posture rather than failing silently.
+		log.WithField("host", cfg.Host).Warn("SMTP TLS disabled (starttls=false): report email is sent over plaintext")
 		opts = append(opts, mail.WithTLSPortPolicy(mail.NoTLS))
 	}
 	if cfg.Username != "" {
