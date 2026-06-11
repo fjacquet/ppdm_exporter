@@ -100,6 +100,16 @@ func Load(path string) (*Config, error) {
 	}
 	for i := range cfg.Servers {
 		s := &cfg.Servers[i]
+		host, err := interpolate(s.Host)
+		if err != nil {
+			return nil, fmt.Errorf("server %s host: %w", s.Name, err)
+		}
+		s.Host = host
+		username, err := interpolate(s.Username)
+		if err != nil {
+			return nil, fmt.Errorf("server %s username: %w", s.Name, err)
+		}
+		s.Username = username
 		pw, err := interpolate(s.Password)
 		if err != nil {
 			return nil, fmt.Errorf("server %s password: %w", s.Name, err)

@@ -58,3 +58,61 @@ servers:
 		t.Fatal("expected error for unset env var reference")
 	}
 }
+
+func TestLoadInterpolatesHostAndUsername(t *testing.T) {
+	t.Setenv("PPDM01_HOSTNAME", "ppdm-from-env.example.com")
+	t.Setenv("PPDM01_USERNAME", "env-monitor")
+	t.Setenv("PPDM01_PASSWORD", "env-secret")
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.yaml")
+	yaml := `
+servers:
+  - name: ppdm01
+    host: "${PPDM01_HOSTNAME}"
+    username: "${PPDM01_USERNAME}"
+    password: "${PPDM01_PASSWORD}"
+`
+	if err := os.WriteFile(path, []byte(yaml), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := Load(path)
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	s := cfg.Servers[0]
+	if s.Host != "ppdm-from-env.example.com" {
+		t.Fatalf("host = %q, want ppdm-from-env.example.com", s.Host)
+	}
+	if s.Username != "env-monitor" {
+		t.Fatalf("username = %q, want env-monitor", s.Username)
+	}
+	if s.Password != "env-secret" {
+		t.Fatalf("password = %q, want env-secret", s.Password)
+	}
+}
+
+func TestLoadFailsOnUnsetHostEnv(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "c.yaml")
+	yaml := `
+servers:
+  - {name: ppdm01, host: "${PPDM_HOST_UNSET}", username: u, password: p}
+`
+	_ = os.WriteFile(path, []byte(yaml), 0o600)
+	if _, err := Load(path); err == nil {
+		t.Fatal("expected error for unset host env var reference")
+	}
+}
+
+func TestLoadFailsOnUnsetUsernameEnv(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "c.yaml")
+	yaml := `
+servers:
+  - {name: ppdm01, host: h, username: "${PPDM_USER_UNSET}", password: p}
+`
+	_ = os.WriteFile(path, []byte(yaml), 0o600)
+	if _, err := Load(path); err == nil {
+		t.Fatal("expected error for unset username env var reference")
+	}
+}

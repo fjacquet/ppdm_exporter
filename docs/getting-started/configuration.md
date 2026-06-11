@@ -20,18 +20,29 @@ otel:
   interval: "30s"
 servers:
   - name: ppdm-prod-01
-    host: ppdm01.example.com
+    host: "${PPDM01_HOSTNAME}"       # ${ENV} interpolation supported
     port: 8443                       # PPDM REST API port (default 8443)
-    username: ppdm-monitor
-    password: "${PPDM01_PASSWORD}"   # ${ENV} interpolation
+    username: "${PPDM01_USERNAME}"   # ${ENV} interpolation supported
+    password: "${PPDM01_PASSWORD}"   # ${ENV} interpolation supported
     insecureSkipVerify: true         # accept self-signed PPDM certs
 ```
 
-## Secrets
+## Secrets and environment interpolation
 
-- `${ENV_VAR}` references are interpolated from the environment; an unset variable is a
-  load-time error (fail fast, not a silent auth failure).
-- Alternatively set `passwordFile: /run/secrets/ppdm01` to read the password from a file.
+`${ENV_VAR}` references are interpolated from the environment in `host`, `username`,
+and `password` fields. An unset variable is a load-time error — fail fast rather than
+a silent auth failure at collection time.
+
+Alternatively set `passwordFile: /run/secrets/ppdm01` to read the password from a file.
+
+**Single-server convenience:** For a single server, you can drive the entire identity
+from environment variables (e.g. from a secrets manager or `.env` file) without editing
+`config.yaml`. Copy `.env.example` to `.env`, fill in the values, and `docker-compose`
+will export them automatically.
+
+**Multi-server deployments:** `config.yaml` is the source of truth — add one entry
+per server under `servers:`. Each entry may reference its own distinct env vars
+(e.g. `${PPDM02_PASSWORD}`, `${PPDM03_HOSTNAME}`).
 
 ## Hot reload
 
