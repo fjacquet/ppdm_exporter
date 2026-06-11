@@ -20,10 +20,10 @@ otel:
   interval: "30s"
 servers:
   - name: ppdm-prod-01
-    host: "${PPDM01_HOSTNAME}"       # ${ENV} interpolation supported
+    host: "${PPDM1_HOSTNAME}"       # ${ENV} interpolation supported
     port: 8443                       # PPDM REST API port (default 8443)
-    username: "${PPDM01_USERNAME}"   # ${ENV} interpolation supported
-    password: "${PPDM01_PASSWORD}"   # ${ENV} interpolation supported
+    username: "${PPDM1_USERNAME}"   # ${ENV} interpolation supported
+    password: "${PPDM1_PASSWORD}"   # ${ENV} interpolation supported
     insecureSkipVerify: true         # accept self-signed PPDM certs
 ```
 
@@ -42,7 +42,7 @@ will export them automatically.
 
 **Multi-server deployments:** `config.yaml` is the source of truth — add one entry
 per server under `servers:`. Each entry may reference its own distinct env vars
-(e.g. `${PPDM02_PASSWORD}`, `${PPDM03_HOSTNAME}`).
+(e.g. `${PPDM2_PASSWORD}`, `${PPDM03_HOSTNAME}`).
 
 ## Hot reload
 

@@ -842,14 +842,14 @@ import (
 )
 
 func TestLoadInterpolatesEnvAndDefaults(t *testing.T) {
-	t.Setenv("PPDM01_PASSWORD", "s3cret")
+	t.Setenv("PPDM1_PASSWORD", "s3cret")
 	dir := t.TempDir()
 	path := filepath.Join(dir, "config.yaml")
 	yaml := `
 server: {host: "0.0.0.0", port: "9102", uri: "/metrics"}
 collection: {interval: "5m", timeout: "60s", lookback: "24h"}
 servers:
-  - {name: ppdm01, host: ppdm01.example.com, username: u, password: "${PPDM01_PASSWORD}", insecureSkipVerify: true}
+  - {name: ppdm01, host: ppdm01.example.com, username: u, password: "${PPDM1_PASSWORD}", insecureSkipVerify: true}
 `
 	if err := os.WriteFile(path, []byte(yaml), 0o600); err != nil {
 		t.Fatal(err)
@@ -1259,7 +1259,7 @@ servers:
     host: ppdm01.example.com
     port: 8443
     username: ppdm-monitor
-    password: "${PPDM01_PASSWORD}"
+    password: "${PPDM1_PASSWORD}"
     insecureSkipVerify: true
 ```
 

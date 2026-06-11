@@ -2,7 +2,7 @@
 
 ```bash
 make cli
-export PPDM01_PASSWORD='...'
+export PPDM1_PASSWORD='...'
 ./bin/ppdm_exporter --config config.yaml --debug
 ```
 

@@ -105,7 +105,7 @@ servers:
     host: ppdm01.example.com
     port: 8443
     username: ppdm-monitor
-    password: "${PPDM01_PASSWORD}"
+    password: "${PPDM1_PASSWORD}"
     insecureSkipVerify: true
 ```
 

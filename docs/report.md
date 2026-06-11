@@ -41,11 +41,11 @@ servers:
     host: ppdm01.example.com
     port: 8443
     username: ppdm-monitor
-    password: "${PPDM01_PASSWORD}"
+    password: "${PPDM1_PASSWORD}"
     insecureSkipVerify: true
 ```
 
-Run: `make report-cli && PG_PASSWORD=… PPDM01_PASSWORD=… ./bin/report --config config.report.yaml --debug`
+Run: `make report-cli && PG_PASSWORD=… PPDM1_PASSWORD=… ./bin/report --config config.report.yaml --debug`
 (`--once` runs a single capture cycle and exits.)
 
 ## Grafana global search

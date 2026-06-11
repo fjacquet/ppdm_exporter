@@ -22,7 +22,7 @@ Part of Fred's family of Dell storage/backup exporters (alongside `ppdd`, `pflex
 make cli
 
 # Run against a PPDM server (set the password via env)
-export PPDM01_PASSWORD=...
+export PPDM1_PASSWORD=...
 ./bin/ppdm_exporter --config config.yaml --debug
 # metrics on http://localhost:9102/metrics, health on /health
 ```
@@ -54,7 +54,7 @@ collection:
 otel: {enabled: false, endpoint: "localhost:4317", insecure: true, interval: "30s"}
 servers:
   - {name: ppdm-prod-01, host: ppdm01.example.com, port: 8443,
-     username: ppdm-monitor, password: "${PPDM01_PASSWORD}", insecureSkipVerify: true}
+     username: ppdm-monitor, password: "${PPDM1_PASSWORD}", insecureSkipVerify: true}
 ```
 
 Config hot-reloads on `SIGHUP` or file change.

@@ -101,14 +101,14 @@ import (
 
 func TestLoadReportInterpolatesAndDefaults(t *testing.T) {
 	t.Setenv("PG_PASSWORD", "pgsecret")
-	t.Setenv("PPDM01_PASSWORD", "s3cret")
+	t.Setenv("PPDM1_PASSWORD", "s3cret")
 	dir := t.TempDir()
 	path := filepath.Join(dir, "report.yaml")
 	yaml := `
 database: {dsn: "postgres://u:${PG_PASSWORD}@localhost:5432/backup_report?sslmode=disable"}
 capture: {interval: "1h", timeout: "5m", retentionDays: 400}
 servers:
-  - {name: ppdm01, tenant: acme, host: h, username: u, password: "${PPDM01_PASSWORD}", insecureSkipVerify: true}
+  - {name: ppdm01, tenant: acme, host: h, username: u, password: "${PPDM1_PASSWORD}", insecureSkipVerify: true}
 `
 	if err := os.WriteFile(path, []byte(yaml), 0o600); err != nil {
 		t.Fatal(err)
@@ -1115,7 +1115,7 @@ servers:
     host: ppdm01.example.com
     port: 8443
     username: ppdm-monitor
-    password: "${PPDM01_PASSWORD}"
+    password: "${PPDM1_PASSWORD}"
     insecureSkipVerify: true
 ```
 

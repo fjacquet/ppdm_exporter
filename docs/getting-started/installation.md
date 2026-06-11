@@ -16,7 +16,7 @@ make cli          # builds bin/ppdm_exporter
 docker pull ghcr.io/fjacquet/ppdm_exporter:latest
 docker run --rm -p 9102:9102 \
   -v "$PWD/config.yaml:/etc/ppdm_exporter/config.yaml:ro" \
-  -e PPDM01_PASSWORD \
+  -e PPDM1_PASSWORD \
   ghcr.io/fjacquet/ppdm_exporter:latest
 ```
 
