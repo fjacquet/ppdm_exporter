@@ -1,13 +1,34 @@
+# Build artifacts
 bin/
 dist/
 vendor/
+coverage.out
+coverage.html
+/ppdm_exporter
+
+# Logs
 log/
 *.log
-.DS_Store
+
+# Docs build (mkdocs)
 site/
-/ppdm_exporter
+
+# Local config & secrets — never commit
 .env
+*.local.yaml
+.claude.local.md
+.claude/settings.local.json
+
+# Editor / OS noise
 .vscode/
-.claude/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Local tooling state
 .rtk/
+
+# Repo-specific
 /report
+.claude/
