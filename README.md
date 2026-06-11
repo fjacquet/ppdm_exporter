@@ -80,6 +80,18 @@ make test     # unit tests
 > cross-checked against the Apache-2.0 `dell/powerprotect-data-manager` module. Capacity
 > and health-entities fields are unconfirmed by any source — see `docs/adr/0009`.
 
+### Validating against a live PPDM
+
+`--once --debug` dumps every collected sample (sorted, exposition style); `--trace` logs
+every API response body (the login exchange is skipped, so the access token never hits
+the logs):
+
+```bash
+./bin/ppdm_exporter --config config.yaml --once --debug --trace 2>trace.log | sort > samples.txt
+# samples.txt  → every metric collected (compare with docs/metrics.md)
+# trace.log    → raw API payloads for anything missing or suspicious
+```
+
 ## License
 
 Apache-2.0.

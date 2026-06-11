@@ -1,12 +1,17 @@
 package ppdmclient
 
 import (
+	"bytes"
 	"context"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"strings"
 	"sync/atomic"
 	"testing"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // writeBytes takes an io.Writer (not http.ResponseWriter) so the Semgrep
@@ -57,6 +62,43 @@ func TestServerClientAuthAndGet(t *testing.T) {
 	_ = c.Get(context.Background(), "/api/v2/activities", &out)
 	if logins != 1 {
 		t.Fatalf("logins = %d, want 1 (token reused)", logins)
+	}
+}
+
+func TestTraceDoesNotBreakCalls(t *testing.T) {
+	var logins int32
+	srv := newFakePPDM(&logins, "tok-123")
+	defer srv.Close()
+
+	var traced bytes.Buffer
+	log.SetOutput(&traced)
+	defer log.SetOutput(os.Stderr)
+
+	c := NewServerClient(Config{
+		Name: "ppdm01", BaseURL: srv.URL, Username: "u", Password: "p",
+		HTTPClient: srv.Client(), Trace: true,
+	})
+	defer func() { _ = c.Close() }()
+
+	var out struct {
+		Content []struct {
+			ID string `json:"id"`
+		} `json:"content"`
+	}
+	// Exercises the OnAfterResponse trace hook on both the login (skipped — its
+	// body carries the access_token) and the data call (logged); the decoded
+	// result must be unaffected.
+	if err := c.Get(context.Background(), "/api/v2/activities", &out); err != nil {
+		t.Fatal(err)
+	}
+	if len(out.Content) != 1 || out.Content[0].ID != "a1" {
+		t.Errorf("content = %+v, want one activity a1", out.Content)
+	}
+	if !strings.Contains(traced.String(), "/api/v2/activities") {
+		t.Error("trace output missing the data call")
+	}
+	if strings.Contains(traced.String(), "tok-123") {
+		t.Error("trace output leaked the access token (login response must be skipped)")
 	}
 }
 

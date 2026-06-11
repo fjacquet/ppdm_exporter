@@ -12,6 +12,9 @@ make sure      # quick local gate: fmt, vet, test, build
 make test      # unit tests          make cli     # build bin/ppdm_exporter
 make demo      # docker-compose: mockppdm -> exporter -> Prometheus -> Grafana
 make release-snapshot   # GoReleaser dry-run
+
+# Live-appliance validation: sorted sample dump (stdout) + raw API payloads (stderr)
+./bin/ppdm_exporter --config config.yaml --once --debug --trace 2>trace.log | sort > samples.txt
 ```
 
 ## Architecture
@@ -47,6 +50,9 @@ and image are untouched.
 - **Label-key invariant**: one ordered label-key set per metric name; rollups pad empty
   values; per-object metrics get their own name. Enforced by `internal/ppdm/labels_test.go`.
 - **Retry excludes 4xx**; re-login on expiry + 401. **Serve HTTP before first collect.**
+- **Trace never logs tokens**: `ppdmclient.Config.Trace` logs response **bodies only** via
+  an `OnAfterResponse` hook and skips `POST /api/v2/login` — PPDM returns the access_token
+  *in that response body*. Never use resty `SetDebug` (dumps auth headers + login body).
 - **No inline semgrep/lint suppressions** — restructure (e.g. `writeBytes(io.Writer, …)`).
 - Per-second/windowed values are **gauges**, aggregated with `sum`/`max`, never `rate()`.
 

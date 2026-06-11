@@ -6,6 +6,10 @@ import (
 	"time"
 )
 
+// loginPath is the PPDM session endpoint. Its response body carries the
+// access_token, so the trace hook in server.go must always skip it.
+const loginPath = "/api/v2/login"
+
 // loginResp is the PPDM login response (POST /api/v2/login). Validated against 19.22.0.
 type loginResp struct {
 	AccessToken  string `json:"access_token"`
@@ -28,7 +32,7 @@ func (c *ServerClient) ensureToken(ctx context.Context) error {
 	resp, err := c.rc.R().SetContext(ctx).
 		SetBody(map[string]string{"username": c.cfg.Username, "password": c.cfg.Password}).
 		SetResult(&lr).
-		Post("/api/v2/login")
+		Post(loginPath)
 	if err != nil {
 		return fmt.Errorf("login POST: %w", err)
 	}

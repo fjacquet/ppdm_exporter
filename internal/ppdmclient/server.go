@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/go-resty/resty/v2"
+	log "github.com/sirupsen/logrus"
 )
 
 // Config configures a ServerClient. HTTPClient is optional (tests inject the
@@ -20,6 +21,12 @@ type Config struct {
 	Password           string
 	InsecureSkipVerify bool
 	HTTPClient         *http.Client
+	// Trace logs every API response body (method, URL, status, body) for
+	// validating payload shapes against a live appliance. The login exchange is
+	// skipped — PPDM returns the access_token in the login response body — and
+	// headers are never logged, so the bearer token cannot leak. Verbose —
+	// debugging only.
+	Trace bool
 }
 
 // ServerClient is the live per-server PPDM REST client.
@@ -47,6 +54,25 @@ func NewServerClient(cfg Config) *ServerClient {
 	rc.SetRetryCount(2).AddRetryCondition(func(r *resty.Response, _ error) bool {
 		return r.StatusCode() >= 500
 	})
+	if cfg.Trace {
+		// Deliberately not resty's SetDebug: that dumps request headers (the
+		// Authorization bearer token) and every response body — including the
+		// login response, which carries access_token + refresh_token. This logs
+		// only method/URL/status and the body, and skips the login exchange
+		// (and with it any token refresh — PPDM refreshes by re-login) entirely.
+		rc.OnAfterResponse(func(_ *resty.Client, r *resty.Response) error {
+			if r.Request.URL == cfg.BaseURL+loginPath {
+				return nil // login body holds the access token — never log it
+			}
+			log.WithFields(log.Fields{
+				"server": cfg.Name,
+				"method": r.Request.Method,
+				"url":    r.Request.URL,
+				"status": r.StatusCode(),
+			}).Infof("API trace:\n%s", r.Body())
+			return nil
+		})
+	}
 	return &ServerClient{cfg: cfg, rc: rc}
 }
 

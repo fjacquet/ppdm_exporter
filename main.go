@@ -4,8 +4,11 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"os/signal"
+	"sort"
+	"strings"
 	"syscall"
 	"time"
 
@@ -23,24 +26,25 @@ var version = "dev"
 
 func main() {
 	var cfgPath string
-	var once, debug bool
+	var once, debug, trace bool
 	root := &cobra.Command{
 		Use:     "ppdm_exporter",
 		Short:   "Prometheus + OTLP exporter for Dell PowerProtect Data Manager",
 		Version: version,
 		RunE: func(_ *cobra.Command, _ []string) error {
-			return run(cfgPath, once, debug)
+			return run(cfgPath, once, debug, trace)
 		},
 	}
 	root.Flags().StringVar(&cfgPath, "config", "config.yaml", "path to config file")
 	root.Flags().BoolVar(&once, "once", false, "run a single collection cycle and exit")
 	root.Flags().BoolVar(&debug, "debug", false, "verbose logging")
+	root.Flags().BoolVar(&trace, "trace", false, "log every PPDM API response body (live-appliance payload validation; very verbose)")
 	if err := root.Execute(); err != nil {
 		log.Fatal(err)
 	}
 }
 
-func run(cfgPath string, once, debug bool) error {
+func run(cfgPath string, once, debug, trace bool) error {
 	if debug {
 		log.SetLevel(log.DebugLevel)
 	}
@@ -102,7 +106,7 @@ func run(cfgPath string, once, debug bool) error {
 	defer stopActive()
 
 	startLoop := func(c *config.Config) {
-		clients := buildClients(c)
+		clients := buildClients(c, trace)
 		col := ppdm.NewCollector(clients,
 			ppdm.Registry(c.Collection.Lookback, c.Collection.AssetAgeThreshold, c.Collection.PerJobActivities),
 			store, c.Collection.Interval, c.Collection.Timeout)
@@ -122,6 +126,9 @@ func run(cfgPath string, once, debug bool) error {
 
 	startLoop(cfg)
 	if once {
+		if debug {
+			dumpSamples(store.Load())
+		}
 		return nil
 	}
 
@@ -150,15 +157,36 @@ func run(cfgPath string, once, debug bool) error {
 }
 
 // buildClients constructs a live PPDM client per configured server.
-func buildClients(cfg *config.Config) []ppdmclient.Client {
+func buildClients(cfg *config.Config, trace bool) []ppdmclient.Client {
 	clients := make([]ppdmclient.Client, 0, len(cfg.Servers))
 	for _, s := range cfg.Servers {
 		clients = append(clients, ppdmclient.NewServerClient(ppdmclient.Config{
 			Name: s.Name, BaseURL: s.BaseURL(), Username: s.Username,
 			Password: s.Password, InsecureSkipVerify: s.InsecureSkipVerify,
+			Trace: trace,
 		}))
 	}
 	return clients
+}
+
+// dumpSamples prints every collected sample in Prometheus exposition style,
+// sorted, so a `--once --debug` run against a live appliance can be diffed
+// against docs/metrics.md to spot silently-absent metrics.
+func dumpSamples(snap *ppdm.Snapshot) {
+	var lines []string
+	for _, sv := range snap.Servers {
+		for _, s := range sv.Samples {
+			parts := make([]string, 0, len(s.Labels))
+			for _, l := range s.Labels {
+				parts = append(parts, fmt.Sprintf("%s=%q", l.Key, l.Value))
+			}
+			lines = append(lines, fmt.Sprintf("%s{%s} %v", s.Name, strings.Join(parts, ","), s.Value))
+		}
+	}
+	sort.Strings(lines)
+	for _, l := range lines {
+		fmt.Println(l)
+	}
 }
 
 func healthHandler(w http.ResponseWriter, store *ppdm.SnapshotStore) {
