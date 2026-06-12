@@ -6,6 +6,15 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+
+- Native `.env` loading at startup (`internal/config.LoadDotEnv`): binary reads
+  `.env` from the working directory first, then next to the config file, before
+  YAML interpolation runs. Already-set environment variables always take precedence
+  (godotenv no-override semantics). Mirrors the docker compose behaviour so
+  `cp .env.example .env` works identically for bare-metal and systemd deployments.
+  Dependency: `github.com/joho/godotenv v1.5.1`.
+
 ## [1.1.0] - 2026-06-06
 
 ### Added

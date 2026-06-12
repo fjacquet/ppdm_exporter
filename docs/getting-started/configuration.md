@@ -44,6 +44,20 @@ will export them automatically.
 per server under `servers:`. Each entry may reference its own distinct env vars
 (e.g. `${PPDM2_PASSWORD}`, `${PPDM03_HOSTNAME}`).
 
+### .env loading
+
+The exporter binary loads a `.env` file natively at startup — from the working
+directory first, then next to the config file — so `cp .env.example .env` works
+for bare-metal and systemd runs exactly like it does under docker compose.
+Already-set environment variables **always take precedence** over `.env` values,
+so secret injection (systemd `Environment=`, Kubernetes secrets, CI) can never be
+shadowed by a stray file.
+
+`config.yaml` is always the source of truth and is always consumed. For
+**multi-server** setups use one `servers` entry per server, either with literal
+values or with per-server env refs (e.g. `${PPDM1_PASSWORD}`, `${PPDM2_PASSWORD}`)
+— there is no implicit discovery of servers from env vars.
+
 ## Hot reload
 
 The config reloads on **`SIGHUP`** or a file change — clients and the collection loop are

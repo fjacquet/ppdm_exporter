@@ -87,6 +87,8 @@ github.com/johnfercher/go-tree v1.1.0 h1:L0Fs5jLR1uA2e/CwfHjNdO/Lt4IGQ46QgxarAC1
 github.com/johnfercher/go-tree v1.1.0/go.mod h1:DUO6QkXIFh1K7jeGBIkLCZaeUgnkdQAsB64FDSoHswg=
 github.com/johnfercher/maroto/v2 v2.4.0 h1:Nc/jA2RCZvNZESrQj41HJOgtkwmerSHd5FUbP4dRrIE=
 github.com/johnfercher/maroto/v2 v2.4.0/go.mod h1:Nnxa3g4f+vzdx/u/dUgx/52HnrCOCt5QBPSdeSlkFZQ=
+github.com/joho/godotenv v1.5.1 h1:7eLL/+HRGLY0ldzfGMeQkb7vMd0as4CfYvUVzLqw0N0=
+github.com/joho/godotenv v1.5.1/go.mod h1:f4LDr5Voq0i2e/R5DDNOoa2zzDfwtkZa6DnEwAbqwq4=
 github.com/jung-kurt/gofpdf v1.0.0/go.mod h1:7Id9E/uU8ce6rXgefFLlgrJj/GYY22cpxn+r32jIOes=
 github.com/klauspost/compress v1.18.5 h1:/h1gH5Ce+VWNLSWqPzOVn6XBO+vJbCNGvjoaGBFW2IE=
 github.com/klauspost/compress v1.18.5/go.mod h1:cwPg85FWrGar70rWktvGQj8/hthj3wpl0PGDogxkrSQ=
