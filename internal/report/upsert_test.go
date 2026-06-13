@@ -11,8 +11,7 @@ func TestUpsertJobsIdempotent(t *testing.T) {
 	ctx := context.Background()
 	now := time.Now()
 	jobs := []Job{{ID: "j1", Category: "PROTECT", State: "COMPLETED",
-		CreatedAt: "2026-06-05T01:00:00Z", StartedAt: "2026-06-05T01:00:00Z",
-		CompletedAt: "2026-06-05T01:04:12Z"}}
+		CreateTime: "2026-06-05T01:00:00Z", EndTime: "2026-06-05T01:04:12Z"}}
 	jobs[0].Result.Status = "SUCCESS"
 	jobs[0].Result.BytesTransferred = 1048576
 	jobs[0].Asset.Name = "vm-app01"
@@ -35,6 +34,20 @@ func TestUpsertJobsIdempotent(t *testing.T) {
 		Scan(&status, &asset, &bytes)
 	if status != "SUCCESS" || asset != "vm-app01" || bytes != 1048576 {
 		t.Fatalf("row = %s/%s/%d", status, asset, bytes)
+	}
+	// Regression (ADR-0010): created_at and started_at both derive from createTime, completed_at from endTime.
+	var createdAt, startedAt, completedAt time.Time
+	if err := st.pool.QueryRow(ctx, `SELECT created_at, started_at, completed_at FROM backup_jobs WHERE id='j1'`).
+		Scan(&createdAt, &startedAt, &completedAt); err != nil {
+		t.Fatal(err)
+	}
+	wantCreate, _ := time.Parse(time.RFC3339, "2026-06-05T01:00:00Z")
+	wantEnd, _ := time.Parse(time.RFC3339, "2026-06-05T01:04:12Z")
+	if !createdAt.Equal(wantCreate) || !startedAt.Equal(wantCreate) {
+		t.Fatalf("created_at=%s started_at=%s, want both %s", createdAt, startedAt, wantCreate)
+	}
+	if !completedAt.Equal(wantEnd) {
+		t.Fatalf("completed_at=%s, want %s", completedAt, wantEnd)
 	}
 }
 

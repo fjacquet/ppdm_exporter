@@ -25,9 +25,8 @@ type Job struct {
 	Category    string `json:"category"`
 	Subcategory string `json:"subcategory"`
 	State       string `json:"state"`
-	CreatedAt   string `json:"createdAt"`
-	StartedAt   string `json:"startedAt"`
-	CompletedAt string `json:"completedAt"`
+	CreateTime  string `json:"createTime"`
+	EndTime     string `json:"endTime"`
 	Result      struct {
 		Status           string  `json:"status"`
 		BytesTransferred float64 `json:"bytesTransferred"`
@@ -35,10 +34,10 @@ type Job struct {
 	Asset struct {
 		ID   string `json:"id"`
 		Name string `json:"name"`
-	} `json:"asset"` // provisional
+	} `json:"asset"`
 	ProtectionPolicy struct {
 		Name string `json:"name"`
-	} `json:"protectionPolicy"` // provisional
+	} `json:"protectionPolicy"`
 }
 
 func (j Job) status() string {

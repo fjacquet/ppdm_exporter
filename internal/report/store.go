@@ -48,6 +48,7 @@ func ts(s string) *time.Time {
 func (s *Store) UpsertJobs(ctx context.Context, tenant, server string, jobs []Job, capturedAt time.Time) error {
 	b := &pgx.Batch{}
 	for _, j := range jobs {
+		// Activity has no distinct start instant; started_at and created_at both derive from createTime.
 		b.Queue(`INSERT INTO backup_jobs
 			(id,tenant,server,category,subcategory,result_status,asset_id,asset_name,policy_name,
 			 started_at,completed_at,bytes_transferred,created_at,captured_at)
@@ -56,8 +57,8 @@ func (s *Store) UpsertJobs(ctx context.Context, tenant, server string, jobs []Jo
 			 completed_at=EXCLUDED.completed_at, bytes_transferred=EXCLUDED.bytes_transferred,
 			 captured_at=EXCLUDED.captured_at`,
 			j.ID, tenant, server, j.Category, j.Subcategory, j.status(), j.Asset.ID, j.Asset.Name,
-			j.ProtectionPolicy.Name, ts(j.StartedAt), ts(j.CompletedAt), int64(j.Result.BytesTransferred),
-			ts(j.CreatedAt), capturedAt)
+			j.ProtectionPolicy.Name, ts(j.CreateTime), ts(j.EndTime), int64(j.Result.BytesTransferred),
+			ts(j.CreateTime), capturedAt)
 	}
 	return s.sendBatch(ctx, b, len(jobs))
 }

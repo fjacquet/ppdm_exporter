@@ -11,8 +11,8 @@ func TestWatermarkAndPrune(t *testing.T) {
 	ctx := context.Background()
 	now := time.Now()
 	// One old job (beyond retention) and one recent.
-	old := Job{ID: "old", Category: "PROTECT", CreatedAt: "2024-01-01T00:00:00Z"}
-	recent := Job{ID: "new", Category: "PROTECT", CreatedAt: "2026-06-05T01:00:00Z"}
+	old := Job{ID: "old", Category: "PROTECT", CreateTime: "2024-01-01T00:00:00Z"}
+	recent := Job{ID: "new", Category: "PROTECT", CreateTime: "2026-06-05T01:00:00Z"}
 	if err := st.UpsertJobs(ctx, "acme", "ppdm01", []Job{old, recent}, now); err != nil {
 		t.Fatal(err)
 	}

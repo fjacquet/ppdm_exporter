@@ -12,7 +12,7 @@ func TestCaptureServerPersists(t *testing.T) {
 	st := newTestStore(t)
 	m := ppdmclient.NewMock("ppdm01")
 	m.SetJSONPrefix("/api/v2/activities", `{"page":{"totalPages":1},"content":[
-		{"id":"j1","category":"PROTECT","state":"COMPLETED","createdAt":"2026-06-05T01:00:00Z",
+		{"id":"j1","category":"PROTECT","state":"COMPLETED","createTime":"2026-06-05T01:00:00Z","endTime":"2026-06-05T01:04:12Z",
 		 "result":{"status":"SUCCESS","bytesTransferred":1048576},"asset":{"id":"a1","name":"vm-app01"}}]}`)
 	m.SetJSONPrefix("/api/v2/copies", `{"page":{"totalPages":1},"content":[
 		{"id":"c1","assetId":"a1","copyType":"FULL","createTime":"2026-06-05T01:04:00Z","retentionLock":true}]}`)
@@ -46,7 +46,7 @@ func TestCaptureServerIdempotentAcrossCycles(t *testing.T) {
 	st := newTestStore(t)
 	m := ppdmclient.NewMock("ppdm01")
 	m.SetJSONPrefix("/api/v2/activities", `{"page":{"totalPages":1},"content":[
-		{"id":"j1","category":"PROTECT","state":"COMPLETED","createdAt":"2026-06-05T01:00:00Z",
+		{"id":"j1","category":"PROTECT","state":"COMPLETED","createTime":"2026-06-05T01:00:00Z","endTime":"2026-06-05T01:04:12Z",
 		 "result":{"status":"SUCCESS"},"asset":{"id":"a1","name":"vm-app01"}}]}`)
 	m.SetJSONPrefix("/api/v2/copies", `{"page":{"totalPages":1},"content":[
 		{"id":"c1","assetId":"a1","createTime":"2026-06-05T01:04:00Z"}]}`)

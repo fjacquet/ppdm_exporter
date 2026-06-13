@@ -68,7 +68,7 @@ func (c *Capturer) CaptureServer(ctx context.Context, tenant string, client ppdm
 func (c *Capturer) capture(ctx context.Context, tenant, server string, client ppdmclient.Client, now time.Time) (map[string]int, error) {
 	counts := map[string]int{}
 
-	// Jobs (incremental by createdAt watermark; bootstrap to retention window on first run).
+	// Jobs (incremental by createTime watermark; bootstrap to retention window on first run).
 	jobWM, err := c.store.JobWatermark(ctx, server)
 	if err != nil {
 		return counts, err
@@ -130,7 +130,7 @@ func (c *Capturer) bootstrap(tenant string, wm time.Time) time.Time {
 // cycle (cheap — the upsert is a no-op) but cannot skip records sharing the watermark
 // timestamp, which `gt` would.
 func activitiesPath(since time.Time) string {
-	return "/api/v2/activities?filter=" + url.QueryEscape(`createdAt ge "`+since.UTC().Format(time.RFC3339)+`"`)
+	return "/api/v2/activities?filter=" + url.QueryEscape(`createTime ge "`+since.UTC().Format(time.RFC3339)+`"`)
 }
 
 func copiesPath(since time.Time) string {
