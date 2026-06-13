@@ -76,7 +76,7 @@ func TestCaptureServerResolvesTargets(t *testing.T) {
 	st := newTestStore(t)
 	m := ppdmclient.NewMock("ppdm01")
 	m.SetJSONPrefix("/api/v2/activities", `{"page":{"totalPages":1},"content":[]}`)
-	m.SetJSONPrefix("/api/v2/copies", `{"page":{"totalPages":1},"content":[]}`)
+	m.SetJSONPrefix("/api/v2/latest-copies", `{"page":{"totalPages":1},"content":[]}`)
 	m.SetJSONPrefix("/api/v2/assets", `{"page":{"totalPages":1},"content":[
 		{"id":"v1","name":"vm","type":"VMWARE_VIRTUAL_MACHINE","protectionPolicy":{"name":"Gold-VM"}}]}`)
 	m.SetJSONPrefix("/api/v3/protection-policies", `{"page":{"totalPages":1},"content":[

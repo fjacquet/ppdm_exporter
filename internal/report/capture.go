@@ -134,7 +134,7 @@ func activitiesPath(since time.Time) string {
 }
 
 func copiesPath(since time.Time) string {
-	return "/api/v2/copies?filter=" + url.QueryEscape(`createTime ge "`+since.UTC().Format(time.RFC3339)+`"`)
+	return "/api/v2/latest-copies?filter=" + url.QueryEscape(`createTime ge "`+since.UTC().Format(time.RFC3339)+`"`)
 }
 
 // RunOnce captures every server once (in parallel) and prunes beyond retention.

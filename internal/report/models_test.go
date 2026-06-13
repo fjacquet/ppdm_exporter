@@ -25,3 +25,18 @@ func TestJobAssetAndStatus(t *testing.T) {
 		t.Fatalf("status = %q", j.status())
 	}
 }
+
+func TestCopyLocked(t *testing.T) {
+	cases := map[string]bool{
+		"ALL_COPIES_LOCKED":     true,
+		"PARTIAL_COPIES_LOCKED": true,
+		"ALL_COPIES_UNLOCKED":   false,
+		"":                      false,
+		"SOMETHING_UNKNOWN":     false,
+	}
+	for state, want := range cases {
+		if got := (Copy{RetentionLock: state}).locked(); got != want {
+			t.Errorf("locked(%q) = %v, want %v", state, got, want)
+		}
+	}
+}

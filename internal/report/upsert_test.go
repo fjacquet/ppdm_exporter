@@ -57,7 +57,9 @@ func TestUpsertCopiesAndAssets(t *testing.T) {
 	now := time.Now()
 	if err := st.UpsertCopies(ctx, "acme", "ppdm01", []Copy{{ID: "c1", AssetID: "a1",
 		CopyType: "FULL", CreateTime: "2026-06-05T01:04:00Z", RetentionTime: "2026-07-05T01:04:00Z",
-		RetentionLock: true, Location: "ddve-01", Size: 1048576}}, now); err != nil {
+		RetentionLock: "ALL_COPIES_LOCKED", Location: "ddve-01", Size: 1048576}, {ID: "c2", AssetID: "a1",
+		CopyType: "FULL", CreateTime: "2026-06-05T01:04:00Z", RetentionTime: "2026-07-05T01:04:00Z",
+		RetentionLock: "ALL_COPIES_UNLOCKED", Location: "ddve-01", Size: 1048576}}, now); err != nil {
 		t.Fatalf("UpsertCopies: %v", err)
 	}
 	if err := st.UpsertAssets(ctx, "acme", "ppdm01", []Asset{{ID: "a1", Name: "vm-app01",
@@ -69,6 +71,11 @@ func TestUpsertCopiesAndAssets(t *testing.T) {
 	_ = st.pool.QueryRow(ctx, `SELECT retention_lock FROM copies WHERE id='c1'`).Scan(&lock)
 	if !lock {
 		t.Fatal("retention_lock not stored")
+	}
+	var unlocked bool
+	_ = st.pool.QueryRow(ctx, `SELECT retention_lock FROM copies WHERE id='c2'`).Scan(&unlocked)
+	if unlocked {
+		t.Fatal("retention_lock should be false for ALL_COPIES_UNLOCKED")
 	}
 }
 

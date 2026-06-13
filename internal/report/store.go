@@ -74,8 +74,9 @@ func (s *Store) UpsertCopies(ctx context.Context, tenant, server string, copies 
 			ON CONFLICT (id, server) DO UPDATE SET expiration_time=EXCLUDED.expiration_time,
 			 retention_time=EXCLUDED.retention_time, retention_lock=EXCLUDED.retention_lock,
 			 captured_at=EXCLUDED.captured_at`,
-			c.ID, tenant, server, c.AssetID, c.PolicyName, c.CopyType, ts(c.CreateTime),
-			ts(c.ExpirationTime), ts(c.RetentionTime), c.RetentionLock, c.StorageSystemID,
+			// policy_name, expiration_time: no 20.1.0 source, intentionally empty/NULL (ADR-0010)
+			c.ID, tenant, server, c.AssetID, "", c.CopyType, ts(c.CreateTime),
+			ts(""), ts(c.RetentionTime), c.locked(), c.StorageSystemID,
 			c.Location, int64(c.Size), capturedAt)
 	}
 	return s.sendBatch(ctx, b, len(copies))
