@@ -14,3 +14,4 @@ Status / Context / Decision / Consequences.
 | [0007](0007-metric-naming-and-units.md) | Metric naming & units |
 | [0008](0008-serve-http-before-first-collect.md) | Serve HTTP before first collect |
 | [0009](0009-provisional-api-mappings.md) | Provisional API mappings & validation |
+| [0010](0010-20.1.0-api-validation.md) | 20.1.0 API validation of provisional mappings |
