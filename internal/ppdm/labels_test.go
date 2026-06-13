@@ -27,7 +27,7 @@ func TestLabelKeySetConsistentPerMetric(t *testing.T) {
 		{"/api/v2/assets", "testdata/assets.json"},
 		{"/api/v2/datadomain-mtrees", "testdata/datadomain-mtrees.json"},
 		{"/api/v2/storage-systems", "testdata/storage-systems.json"},
-		{"/api/v3/health-entities", "testdata/health-entities.json"},
+		{"/api/v3/health-results", "testdata/health-results.json"},
 		{"/api/v2/alerts", "testdata/alerts.json"},
 	} {
 		body, err := os.ReadFile(f.file)

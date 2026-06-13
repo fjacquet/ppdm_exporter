@@ -1,0 +1,4 @@
+{"page":{"number":0,"totalPages":1},"content":[
+  {"status":"OK","healthEntityRef":{"name":"ppdm-server","categories":["SYSTEM"]}},
+  {"status":"WARNING","healthEntityRef":{"name":"dd-storage","categories":["STORAGE"]}}
+]}

@@ -11,7 +11,7 @@ import (
 func TestHealthCollect(t *testing.T) {
 	m := ppdmclient.NewMock("ppdm01")
 	for _, f := range []struct{ prefix, file string }{
-		{"/api/v3/health-entities", "testdata/health-entities.json"},
+		{"/api/v3/health-results", "testdata/health-results.json"},
 		{"/api/v2/alerts", "testdata/alerts.json"},
 	} {
 		body, err := os.ReadFile(f.file)
@@ -46,5 +46,14 @@ func TestHealthCollect(t *testing.T) {
 	}
 	if alerts["WARNING|ACKNOWLEDGED"] != 1 {
 		t.Errorf("WARNING/ACKNOWLEDGED = %v, want 1", alerts["WARNING|ACKNOWLEDGED"])
+	}
+	var comp string
+	for _, s := range got {
+		if s.Name == "ppdm_health_entity_status" && s.LabelValue("entity") == "dd-storage" {
+			comp = s.LabelValue("component")
+		}
+	}
+	if comp != "STORAGE" {
+		t.Errorf("dd-storage component = %q, want STORAGE", comp)
 	}
 }
