@@ -66,21 +66,21 @@ func (c Copy) locked() bool {
 	return c.RetentionLock == "ALL_COPIES_LOCKED" || c.RetentionLock == "PARTIAL_COPIES_LOCKED"
 }
 
-// Asset is one /api/v2/assets record (current protection state).
+// Asset is one /api/v2/assets record (current protection state; 20.1.0 Asset, ADR-0010).
 type Asset struct {
 	ID                    string `json:"id"`
 	Name                  string `json:"name"`
 	Type                  string `json:"type"`
-	ProtectionStatus      string `json:"protectionStatus"`      // provisional
-	LastAvailableCopyTime string `json:"lastAvailableCopyTime"` // provisional
+	ProtectionStatus      string `json:"protectionStatus"`
+	LastAvailableCopyTime string `json:"lastAvailableCopyTime"`
 	ProtectionPolicy      struct {
 		Name string `json:"name"`
-	} `json:"protectionPolicy"` // provisional
+	} `json:"protectionPolicy"`
 }
 
 // Policy is one /api/v3/protection-policies record. Objectives kept as raw JSON.
 type Policy struct {
 	ID         string `json:"id"`
 	Name       string `json:"name"`
-	Objectives any    `json:"objectives"` // provisional; stored as jsonb
+	Objectives any    `json:"objectives"` // stored as jsonb
 }
