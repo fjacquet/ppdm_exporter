@@ -8,28 +8,27 @@ import (
 	"github.com/fjacquet/ppdm_exporter/internal/ppdmclient"
 )
 
-// activity is the shape of one /api/v2/activities content item.
-// state/result.status confirmed via the Apache-2.0 dell.ppdm.psm1; result.bytesTransferred
-// is cumulative + summable (PDF-confirmed on PROTECT activities). The per-job fields
-// (id/name/asset/protectionPolicy/startedAt/completedAt) are provisional — ADR-0009.
+// activity is the shape of one /api/v2/activities content item, validated against the
+// 20.1.0 Activity schema (docs/swagger/9765, ADR-0010). result.bytesTransferred is
+// cumulative + summable (PDF-confirmed on PROTECT activities).
 type activity struct {
-	ID          string `json:"id"`          // provisional
-	Name        string `json:"name"`        // provisional
-	Category    string `json:"category"`    //
-	Subcategory string `json:"subcategory"` // provisional
-	State       string `json:"state"`       //
-	StartedAt   string `json:"startedAt"`   // provisional; RFC3339 or ""
-	CompletedAt string `json:"completedAt"` // provisional; RFC3339 or "" (running)
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Category    string `json:"category"`
+	Subcategory string `json:"subcategory"`
+	State       string `json:"state"`
+	CreateTime  string `json:"createTime"` // RFC3339
+	EndTime     string `json:"endTime"`    // RFC3339, or "" / null when still running
 	Result      struct {
 		Status           string  `json:"status"`
 		BytesTransferred float64 `json:"bytesTransferred"`
 	} `json:"result"`
 	ProtectionPolicy struct {
 		Name string `json:"name"`
-	} `json:"protectionPolicy"` // provisional
+	} `json:"protectionPolicy"`
 	Asset struct {
 		Name string `json:"name"`
-	} `json:"asset"` // provisional
+	} `json:"asset"`
 }
 
 // status returns the terminal result status, falling back to the lifecycle state for
@@ -54,7 +53,7 @@ func (a Activities) Collect(ctx context.Context, c ppdmclient.Client) ([]Sample,
 	since := time.Now().Add(-a.Lookback).UTC().Format(time.RFC3339)
 	// The filter value carries spaces and quotes, so it must be URL-encoded; GetAll
 	// then appends &page=/&pageSize= with the correct separator.
-	path := "/api/v2/activities?filter=" + url.QueryEscape(`createdAt ge "`+since+`"`)
+	path := "/api/v2/activities?filter=" + url.QueryEscape(`createTime ge "`+since+`"`)
 	acts, err := ppdmclient.GetAll[activity](ctx, c, path, 500)
 	if err != nil {
 		return nil, err
@@ -109,13 +108,13 @@ func perJobSamples(acts []activity) []Sample {
 	return out
 }
 
-// jobDuration returns completedAt-startedAt in seconds when both timestamps parse.
+// jobDuration returns endTime-createTime in seconds when both timestamps parse.
 func jobDuration(act activity) (float64, bool) {
-	if act.StartedAt == "" || act.CompletedAt == "" {
+	if act.CreateTime == "" || act.EndTime == "" {
 		return 0, false
 	}
-	start, err1 := time.Parse(time.RFC3339, act.StartedAt)
-	end, err2 := time.Parse(time.RFC3339, act.CompletedAt)
+	start, err1 := time.Parse(time.RFC3339, act.CreateTime)
+	end, err2 := time.Parse(time.RFC3339, act.EndTime)
 	if err1 != nil || err2 != nil {
 		return 0, false
 	}

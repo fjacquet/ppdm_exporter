@@ -83,7 +83,7 @@ func TestActivitiesPerJob(t *testing.T) {
 	if durByID["act-1"] != 252 { // 01:04:12 - 01:00:00
 		t.Errorf("act-1 duration = %v, want 252", durByID["act-1"])
 	}
-	// act-3 is still running (completedAt null) -> no duration series.
+	// act-3 is still running (endTime null) -> no duration series.
 	if _, ok := durByID["act-3"]; ok {
 		t.Errorf("act-3 (running) should have no duration series")
 	}
