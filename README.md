@@ -24,7 +24,7 @@ make cli
 # Run against a PPDM server (set the password via env)
 export PPDM1_PASSWORD=...
 ./bin/ppdm_exporter --config config.yaml --debug
-# metrics on http://localhost:9102/metrics, health on /health
+# metrics on http://localhost:9442/metrics, health on /health
 ```
 
 ### End-to-end demo (no PPDM required)
@@ -33,7 +33,7 @@ export PPDM1_PASSWORD=...
 make demo        # mockppdm -> exporter -> Prometheus -> Grafana
 # Grafana:    http://localhost:3000  (admin/admin) -> "PowerProtect Data Manager — Overview"
 # Prometheus: http://localhost:9090
-# Exporter:   http://localhost:9102/metrics
+# Exporter:   http://localhost:9442/metrics
 make demo-down
 ```
 
@@ -45,7 +45,7 @@ the dashboard populates without real hardware.
 `config.yaml` (secrets via `${ENV_VAR}` or `passwordFile`):
 
 ```yaml
-server: {host: "0.0.0.0", port: "9102", uri: "/metrics"}
+server: {host: "0.0.0.0", port: "9442", uri: "/metrics"}
 collection:
   interval: "5m"           # snapshot cadence
   timeout: "60s"           # per-server cycle timeout
@@ -95,3 +95,15 @@ the logs):
 ## License
 
 Apache-2.0.
+
+## Node Exporter Full (Grafana 1860)
+
+This repo bundles the community [Node Exporter Full](https://grafana.com/grafana/dashboards/1860-node-exporter-full/)
+dashboard (`node-exporter-full.json`, auto-provisioned). It visualizes **host OS** metrics
+(CPU, memory, disk, network) exposed by [`prom/node-exporter`](https://hub.docker.com/r/prom/node-exporter) —
+**not** this exporter's own metrics.
+
+`node_exporter` is **not** part of this demo stack: it belongs on the hosts you actually want to
+monitor, not bolted onto the exporter's compose. To use this dashboard, run `prom/node-exporter`
+on those hosts and add a `node-exporter` scrape job to your Prometheus; the dashboard then
+visualizes them.

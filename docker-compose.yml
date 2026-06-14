@@ -29,7 +29,7 @@ services:
     container_name: ppdm_exporter
     command: ["--config", "/etc/ppdm_exporter/config.yaml"]
     ports:
-      - "9102:9102"
+      - "9442:9442"
     volumes:
       - ./config.demo.yaml:/etc/ppdm_exporter/config.yaml:ro
     depends_on:

@@ -6,8 +6,8 @@ export PPDM1_PASSWORD='...'
 ./bin/ppdm_exporter --config config.yaml --debug
 ```
 
-- Metrics: <http://localhost:9102/metrics>
-- Health: <http://localhost:9102/health> (`200` when all servers are OK, `503` otherwise)
+- Metrics: <http://localhost:9442/metrics>
+- Health: <http://localhost:9442/health> (`200` when all servers are OK, `503` otherwise)
 
 Scrape it from Prometheus:
 
@@ -15,7 +15,7 @@ Scrape it from Prometheus:
 scrape_configs:
   - job_name: ppdm
     static_configs:
-      - targets: ['ppdm-host:9102']
+      - targets: ['ppdm-host:9442']
 ```
 
 Run a single cycle without serving (useful to validate credentials/connectivity):

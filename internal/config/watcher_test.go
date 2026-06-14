@@ -16,7 +16,7 @@ func TestWatcherEmitsReloadedConfig(t *testing.T) {
 			"server: {port: \""+port+"\"}\ncollection: {interval: 5m}\n"+
 				"servers:\n  - {name: ppdm01, host: h, username: u, password: \"${PPDM01_PASSWORD}\"}\n"), 0o600)
 	}
-	write("9102")
+	write("9442")
 
 	w, err := NewWatcher(path)
 	if err != nil {

@@ -2,6 +2,6 @@
 FROM gcr.io/distroless/static:nonroot
 COPY ppdm_exporter /ppdm_exporter
 USER nonroot:nonroot
-EXPOSE 9102
+EXPOSE 9442
 ENTRYPOINT ["/ppdm_exporter"]
 CMD ["--config", "/etc/ppdm_exporter/config.yaml"]
