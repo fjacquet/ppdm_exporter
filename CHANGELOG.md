@@ -6,6 +6,32 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-06-14
+
+### Changed
+
+- Grafana dashboards rechallenged into one consistent product (`grafana/dashboards/`).
+  Shared presentation layer across all four boards: canonical activity-status
+  semantics (`SUCCESS|OK` / `FAILED` / `RUNNING|QUEUED`) resolving the prior
+  Overview-vs-Backup-Report success-rate disagreement, IEC byte / `percentunit` /
+  `dtdurations` unit discipline, shared green/amber/red thresholds with
+  `colorMode=value`, and table transforms with status value-mapped to colored chips.
+  Added cross-board drill-down data links (Overview → Backup Report,
+  Compliance → Backup History).
+  - **Overview** slimmed to a glance-and-route board: `Servers up` fixed to
+    `sum(ppdm_up)`, added `Protected %`, storage units now show `% full` (using the
+    previously-unused `ppdm_storage_unit_physical_capacity_bytes`), and panels that
+    duplicated Backup Report were removed.
+  - **Backup Report** dropped the duplicate success-rate gauge; per-job detail is now
+    a single table joined on the `activity_id` label.
+  - **SLA Compliance** shows `Compliant %` as `percentunit` with thresholds, moves the
+    all-assets table into a collapsed row, and adds true/false compliance chips.
+  - **Backup History** grew from 2 to 6 panels: a SQL KPI strip, both tables now honour
+    the Grafana time range via `$__timeFilter`, and `$server` / `$result_status`
+    template variables were added.
+- Design spec recorded at
+  `docs/superpowers/specs/2026-06-14-grafana-dashboard-rechallenge-design.md`.
+
 ## [1.5.1] - 2026-06-14
 
 ### Documentation
