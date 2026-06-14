@@ -19,7 +19,7 @@ make demo            # docker compose up --build
 |---|---|---|
 | Grafana | <http://localhost:3000> | `admin` / `admin` → *PowerProtect Data Manager — Overview* |
 | Prometheus | <http://localhost:9090> | target `ppdm_exporter` should be **up** |
-| Exporter | <http://localhost:9102/metrics> | raw metrics |
+| Exporter | <http://localhost:9442/metrics> | raw metrics |
 
 Tear down:
 

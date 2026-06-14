@@ -11,7 +11,7 @@ func TestLoadInterpolatesEnvAndDefaults(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "config.yaml")
 	yaml := `
-server: {host: "0.0.0.0", port: "9102", uri: "/metrics"}
+server: {host: "0.0.0.0", port: "9442", uri: "/metrics"}
 collection: {interval: "5m", timeout: "60s", lookback: "24h"}
 servers:
   - {name: ppdm01, host: ppdm01.example.com, username: u, password: "${PPDM01_PASSWORD}", insecureSkipVerify: true}

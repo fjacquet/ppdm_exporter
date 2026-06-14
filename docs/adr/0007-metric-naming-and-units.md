@@ -8,7 +8,7 @@ Consistent, unit-explicit names and a single identity label let one exporter ser
 servers and keep PromQL portable. Family precedent: `pstore` 0006, `pstore` 0005.
 
 ## Decision
-- Prefix all metrics `ppdm_`; listen port **9102**.
+- Prefix all metrics `ppdm_`; listen port **9442**.
 - Every metric carries a `server` identity label (one process, many PPDM servers).
 - Be unit-explicit: byte metrics end `_bytes`, ages end `_seconds`.
 - **Per-second / rate values are gauges**, aggregated with `sum`/`avg`, never `rate()`.

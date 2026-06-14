@@ -3,7 +3,7 @@
 # Also usable locally: `go run ./cmd/mockppdm &` then `./bin/ppdm_exporter --config config.demo.yaml`.
 server:
   host: "0.0.0.0"
-  port: "9102"
+  port: "9442"
   uri: "/metrics"
 collection:
   interval: "15s"

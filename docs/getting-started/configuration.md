@@ -5,7 +5,7 @@ The exporter reads a YAML file (default `config.yaml`, override with `--config`)
 ```yaml
 server:
   host: "0.0.0.0"
-  port: "9102"
+  port: "9442"
   uri: "/metrics"
 collection:
   interval: "5m"            # snapshot cadence

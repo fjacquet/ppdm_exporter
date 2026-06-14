@@ -24,7 +24,7 @@ make cli
 # Run against a PPDM server (set the password via env)
 export PPDM1_PASSWORD=...
 ./bin/ppdm_exporter --config config.yaml --debug
-# metrics on http://localhost:9102/metrics, health on /health
+# metrics on http://localhost:9442/metrics, health on /health
 ```
 
 ### End-to-end demo (no PPDM required)
@@ -33,7 +33,7 @@ export PPDM1_PASSWORD=...
 make demo        # mockppdm -> exporter -> Prometheus -> Grafana
 # Grafana:    http://localhost:3000  (admin/admin) -> "PowerProtect Data Manager — Overview"
 # Prometheus: http://localhost:9090
-# Exporter:   http://localhost:9102/metrics
+# Exporter:   http://localhost:9442/metrics
 make demo-down
 ```
 
@@ -45,7 +45,7 @@ the dashboard populates without real hardware.
 `config.yaml` (secrets via `${ENV_VAR}` or `passwordFile`):
 
 ```yaml
-server: {host: "0.0.0.0", port: "9102", uri: "/metrics"}
+server: {host: "0.0.0.0", port: "9442", uri: "/metrics"}
 collection:
   interval: "5m"           # snapshot cadence
   timeout: "60s"           # per-server cycle timeout
