@@ -6,6 +6,16 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [1.5.1] - 2026-06-14
+
+### Documentation
+
+- ADRs 0011–0013 record the `cmd/report` backup-assurance reporter decisions that
+  previously lived only in `docs/report.md`: 0011 (second binary + PostgreSQL
+  persistence + assurance-not-forensic scope), 0012 (per-tenant `/report`
+  authorization via sha256 bearer-token registry), 0013 (per-tenant retention with
+  default-fallback chain + per-tenant prune).
+
 ### Added
 
 - Native `.env` loading at startup (`internal/config.LoadDotEnv`): binary reads
