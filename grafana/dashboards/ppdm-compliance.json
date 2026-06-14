@@ -22,20 +22,20 @@
   },
   "panels": [
     {
-      "id": 1, "type": "stat", "title": "Compliant",
-      "description": "Share of assets meeting every SLA rule (RPO, retention, copies).",
+      "id": 1, "type": "stat", "title": "Compliant %",
+      "description": "Share of assets meeting every SLA rule (RPO, retention, copies). Target ≥ 0.95.",
       "datasource": {"type": "postgres", "uid": "backuphistory"},
       "gridPos": {"h": 5, "w": 6, "x": 0, "y": 0},
-      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background", "graphMode": "none"},
-      "fieldConfig": {"defaults": {"unit": "percentunit", "min": 0, "max": 1, "thresholds": {"steps": [{"color": "red", "value": null}, {"color": "orange", "value": 0.9}, {"color": "green", "value": 0.99}]}}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value", "graphMode": "none"},
+      "fieldConfig": {"defaults": {"unit": "percentunit", "min": 0, "max": 1, "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "orange", "value": 0.9}, {"color": "green", "value": 0.95}]}}},
       "targets": [{"refId": "A", "format": "table", "rawQuery": true, "rawSql": "SELECT avg(compliant::int)::float8 AS \"compliant\" FROM compliance WHERE tenant IN ($tenant)"}]
     },
     {
       "id": 2, "type": "stat", "title": "Non-compliant assets",
       "datasource": {"type": "postgres", "uid": "backuphistory"},
       "gridPos": {"h": 5, "w": 6, "x": 6, "y": 0},
-      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background", "graphMode": "none"},
-      "fieldConfig": {"defaults": {"thresholds": {"steps": [{"color": "green", "value": null}, {"color": "red", "value": 1}]}}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value", "graphMode": "none"},
+      "fieldConfig": {"defaults": {"thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "red", "value": 1}]}}},
       "targets": [{"refId": "A", "format": "table", "rawQuery": true, "rawSql": "SELECT count(*) AS \"non_compliant\" FROM compliance WHERE tenant IN ($tenant) AND NOT compliant"}]
     },
     {
@@ -43,21 +43,33 @@
       "datasource": {"type": "postgres", "uid": "backuphistory"},
       "gridPos": {"h": 5, "w": 12, "x": 12, "y": 0},
       "options": {"orientation": "horizontal", "displayMode": "gradient", "reduceOptions": {"calcs": ["lastNotNull"]}},
-      "fieldConfig": {"defaults": {"unit": "percentunit", "min": 0, "max": 1, "thresholds": {"steps": [{"color": "red", "value": null}, {"color": "orange", "value": 0.9}, {"color": "green", "value": 0.99}]}}},
+      "fieldConfig": {"defaults": {"unit": "percentunit", "min": 0, "max": 1, "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "orange", "value": 0.9}, {"color": "green", "value": 0.95}]}}},
       "targets": [{"refId": "A", "format": "table", "rawQuery": true, "rawSql": "SELECT tenant, avg(compliant::int)::float8 AS \"compliant\" FROM compliance WHERE tenant IN ($tenant) GROUP BY tenant ORDER BY tenant"}]
     },
     {
       "id": 10, "type": "table", "title": "Non-compliant assets",
-      "description": "Each asset failing one or more SLA rules, with the failing rules.",
+      "description": "Each asset failing one or more SLA rules, with the failing rules. Click a row to drill into Backup History for that tenant.",
       "datasource": {"type": "postgres", "uid": "backuphistory"},
       "gridPos": {"h": 12, "w": 16, "x": 0, "y": 5},
-      "options": {"showHeader": true, "sortBy": [{"displayName": "reasons", "desc": false}]},
+      "options": {"showHeader": true, "sortBy": [{"displayName": "Tenant", "desc": false}]},
       "fieldConfig": {
-        "defaults": {},
+        "defaults": {
+          "custom": {"align": "auto", "cellOptions": {"type": "auto"}},
+          "links": [
+            {"title": "Open in Backup History", "url": "/d/ppdm-backup-history/powerprotect-backup-history-global-search?var-tenant=${__data.fields.Tenant}", "targetBlank": false}
+          ]
+        },
         "overrides": [
-          {"matcher": {"id": "byName", "options": "reasons"}, "properties": [{"id": "custom.cellOptions", "value": {"type": "color-text"}}, {"id": "color", "value": {"mode": "fixed", "fixedColor": "red"}}]}
+          {"matcher": {"id": "byName", "options": "reasons"}, "properties": [{"id": "displayName", "value": "Failing rules"}, {"id": "custom.cellOptions", "value": {"type": "color-text"}}, {"id": "color", "value": {"mode": "fixed", "fixedColor": "red"}}]},
+          {"matcher": {"id": "byName", "options": "rpo_ok"}, "properties": [{"id": "displayName", "value": "RPO OK"}, {"id": "custom.cellOptions", "value": {"type": "color-background"}}, {"id": "mappings", "value": [{"type": "value", "options": {"true": {"text": "✓", "color": "green", "index": 0}, "false": {"text": "✗", "color": "red", "index": 1}}}]}]},
+          {"matcher": {"id": "byName", "options": "retention_ok"}, "properties": [{"id": "displayName", "value": "Retention OK"}, {"id": "custom.cellOptions", "value": {"type": "color-background"}}, {"id": "mappings", "value": [{"type": "value", "options": {"true": {"text": "✓", "color": "green", "index": 0}, "false": {"text": "✗", "color": "red", "index": 1}}}]}]},
+          {"matcher": {"id": "byName", "options": "copies_ok"}, "properties": [{"id": "displayName", "value": "Copies OK"}, {"id": "custom.cellOptions", "value": {"type": "color-background"}}, {"id": "mappings", "value": [{"type": "value", "options": {"true": {"text": "✓", "color": "green", "index": 0}, "false": {"text": "✗", "color": "red", "index": 1}}}]}]}
         ]
       },
+      "transformations": [
+        {"id": "organize", "options": {"excludeByName": {}, "indexByName": {"tenant": 0, "server": 1, "asset_name": 2, "asset_type": 3, "policy_name": 4, "reasons": 5, "rpo_ok": 6, "retention_ok": 7, "copies_ok": 8}, "renameByName": {"tenant": "Tenant", "server": "Server", "asset_name": "Asset", "asset_type": "Type", "policy_name": "Policy"}}},
+        {"id": "sortBy", "options": {"fields": {}, "sort": [{"field": "Tenant"}, {"field": "Asset"}]}}
+      ],
       "targets": [{"refId": "A", "format": "table", "rawQuery": true, "rawSql": "SELECT tenant, server, asset_name, asset_type, policy_name, reasons, rpo_ok, retention_ok, copies_ok FROM compliance WHERE tenant IN ($tenant) AND NOT compliant ORDER BY tenant, asset_name"}]
     },
     {
@@ -66,21 +78,35 @@
       "datasource": {"type": "postgres", "uid": "backuphistory"},
       "gridPos": {"h": 12, "w": 8, "x": 16, "y": 5},
       "options": {"orientation": "horizontal", "displayMode": "gradient", "reduceOptions": {"calcs": ["lastNotNull"]}},
-      "fieldConfig": {"defaults": {"thresholds": {"steps": [{"color": "green", "value": null}, {"color": "red", "value": 1}]}}},
+      "fieldConfig": {"defaults": {"thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "red", "value": 1}]}}},
       "targets": [{"refId": "A", "format": "table", "rawQuery": true, "rawSql": "SELECT 'rpo' AS rule, count(*) AS failures FROM compliance WHERE tenant IN ($tenant) AND NOT rpo_ok UNION ALL SELECT 'retention', count(*) FROM compliance WHERE tenant IN ($tenant) AND NOT retention_ok UNION ALL SELECT 'copies', count(*) FROM compliance WHERE tenant IN ($tenant) AND NOT copies_ok"}]
     },
     {
-      "id": 20, "type": "table", "title": "All assets — resolved targets & verdicts",
-      "datasource": {"type": "postgres", "uid": "backuphistory"},
-      "gridPos": {"h": 11, "w": 24, "x": 0, "y": 17},
-      "options": {"showHeader": true, "sortBy": [{"displayName": "compliant", "desc": false}]},
-      "fieldConfig": {
-        "defaults": {},
-        "overrides": [
-          {"matcher": {"id": "byName", "options": "rpo_seconds"}, "properties": [{"id": "unit", "value": "s"}]}
-        ]
-      },
-      "targets": [{"refId": "A", "format": "table", "rawQuery": true, "rawSql": "SELECT tenant, asset_name, asset_type, policy_name, compliant, reasons, rpo_seconds, retention_days, min_copies FROM compliance WHERE tenant IN ($tenant) ORDER BY compliant, asset_name"}]
+      "id": 30, "type": "row", "title": "All assets — resolved targets & verdicts",
+      "collapsed": true,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 17},
+      "panels": [
+        {
+          "id": 20, "type": "table", "title": "All assets — resolved targets & verdicts",
+          "datasource": {"type": "postgres", "uid": "backuphistory"},
+          "gridPos": {"h": 11, "w": 24, "x": 0, "y": 18},
+          "options": {"showHeader": true, "sortBy": [{"displayName": "Compliant", "desc": false}]},
+          "fieldConfig": {
+            "defaults": {"custom": {"align": "auto", "cellOptions": {"type": "auto"}}},
+            "overrides": [
+              {"matcher": {"id": "byName", "options": "rpo_seconds"}, "properties": [{"id": "displayName", "value": "RPO"}, {"id": "unit", "value": "s"}]},
+              {"matcher": {"id": "byName", "options": "reasons"}, "properties": [{"id": "displayName", "value": "Failing rules"}, {"id": "custom.cellOptions", "value": {"type": "color-text"}}, {"id": "color", "value": {"mode": "fixed", "fixedColor": "red"}}]},
+              {"matcher": {"id": "byName", "options": "compliant"}, "properties": [{"id": "displayName", "value": "Compliant"}, {"id": "custom.cellOptions", "value": {"type": "color-background"}}, {"id": "mappings", "value": [{"type": "value", "options": {"true": {"text": "✓", "color": "green", "index": 0}, "false": {"text": "✗", "color": "red", "index": 1}}}]}]}
+            ]
+          },
+          "transformations": [
+            {"id": "organize", "options": {"excludeByName": {}, "indexByName": {"tenant": 0, "asset_name": 1, "asset_type": 2, "policy_name": 3, "compliant": 4, "reasons": 5, "rpo_seconds": 6, "retention_days": 7, "min_copies": 8}, "renameByName": {"tenant": "Tenant", "asset_name": "Asset", "asset_type": "Type", "policy_name": "Policy", "retention_days": "Retention (days)", "min_copies": "Min copies"}}},
+            {"id": "sortBy", "options": {"fields": {}, "sort": [{"field": "Compliant"}, {"field": "Asset"}]}}
+          ],
+          "targets": [{"refId": "A", "format": "table", "rawQuery": true, "rawSql": "SELECT tenant, asset_name, asset_type, policy_name, compliant, reasons, rpo_seconds, retention_days, min_copies FROM compliance WHERE tenant IN ($tenant) ORDER BY compliant, asset_name"}]
+        }
+      ],
+      "targets": []
     }
   ]
 }

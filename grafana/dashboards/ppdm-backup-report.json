@@ -47,7 +47,7 @@
       "id": 3, "type": "stat", "title": "Failed",
       "datasource": {"type": "prometheus", "uid": "prometheus"},
       "gridPos": {"h": 4, "w": 4, "x": 8, "y": 0},
-      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background", "graphMode": "none"},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value", "graphMode": "none"},
       "fieldConfig": {"defaults": {"thresholds": {"steps": [{"color": "green", "value": null}, {"color": "red", "value": 1}]}}},
       "targets": [{"refId": "A", "expr": "sum(ppdm_activity_count{server=~\"$server\", category=~\"$category\", result_status=\"FAILED\"}) or vector(0)"}]
     },
@@ -55,9 +55,9 @@
       "id": 4, "type": "stat", "title": "Success rate",
       "datasource": {"type": "prometheus", "uid": "prometheus"},
       "gridPos": {"h": 4, "w": 4, "x": 12, "y": 0},
-      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background", "graphMode": "none"},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value", "graphMode": "none"},
       "fieldConfig": {"defaults": {"unit": "percentunit", "min": 0, "max": 1, "thresholds": {"steps": [{"color": "red", "value": null}, {"color": "orange", "value": 0.9}, {"color": "green", "value": 0.99}]}}},
-      "targets": [{"refId": "A", "expr": "sum(ppdm_activity_count{server=~\"$server\", category=~\"$category\", result_status=~\"SUCCESS|OK\"}) / clamp_min(sum(ppdm_activity_count{server=~\"$server\", category=~\"$category\"}), 1)"}]
+      "targets": [{"refId": "A", "expr": "(sum(ppdm_activity_count{server=~\"$server\", category=~\"$category\", result_status=~\"SUCCESS|OK\"}) / clamp_min(sum(ppdm_activity_count{server=~\"$server\", category=~\"$category\"}), 1)) or vector(0)"}]
     },
     {
       "id": 5, "type": "stat", "title": "Data protected",
@@ -81,21 +81,17 @@
       "datasource": {"type": "prometheus", "uid": "prometheus"},
       "gridPos": {"h": 9, "w": 10, "x": 0, "y": 4},
       "options": {"showHeader": true, "sortBy": [{"displayName": "jobs", "desc": true}]},
-      "fieldConfig": {"defaults": {}, "overrides": [{"matcher": {"id": "byName", "options": "result_status"}, "properties": [{"id": "custom.cellOptions", "value": {"type": "color-text"}}, {"id": "mappings", "value": [{"type": "value", "options": {"FAILED": {"color": "red"}, "SUCCESS": {"color": "green"}, "OK": {"color": "green"}}}]}]}]},
+      "fieldConfig": {"defaults": {}, "overrides": [{"matcher": {"id": "byName", "options": "status"}, "properties": [{"id": "custom.cellOptions", "value": {"type": "color-text"}}, {"id": "mappings", "value": [{"type": "value", "options": {"FAILED": {"color": "red"}, "SUCCESS": {"color": "green"}, "OK": {"color": "green"}, "RUNNING": {"color": "blue"}, "QUEUED": {"color": "blue"}}}]}]}]},
       "targets": [{"refId": "A", "expr": "sum by (category, result_status) (ppdm_activity_count{server=~\"$server\", category=~\"$category\"})", "format": "table", "instant": true}],
-      "transformations": [{"id": "organize", "options": {"excludeByName": {"Time": true, "__name__": true}, "renameByName": {"Value": "jobs"}}}]
-    },
-    {
-      "id": 11, "type": "gauge", "title": "Success rate",
-      "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "gridPos": {"h": 9, "w": 4, "x": 10, "y": 4},
-      "fieldConfig": {"defaults": {"unit": "percentunit", "min": 0, "max": 1, "thresholds": {"steps": [{"color": "red", "value": null}, {"color": "orange", "value": 0.9}, {"color": "green", "value": 0.99}]}}},
-      "targets": [{"refId": "A", "expr": "sum(ppdm_activity_count{server=~\"$server\", category=~\"$category\", result_status=~\"SUCCESS|OK\"}) / clamp_min(sum(ppdm_activity_count{server=~\"$server\", category=~\"$category\"}), 1)"}]
+      "transformations": [
+        {"id": "organize", "options": {"excludeByName": {"Time": true, "__name__": true}, "renameByName": {"Value": "jobs", "result_status": "status"}, "indexByName": {"category": 0, "status": 1, "jobs": 2}}},
+        {"id": "sortBy", "options": {"fields": "", "sort": [{"field": "jobs", "desc": true}]}}
+      ]
     },
     {
       "id": 12, "type": "bargauge", "title": "Failed jobs by category",
       "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "gridPos": {"h": 9, "w": 5, "x": 14, "y": 4},
+      "gridPos": {"h": 9, "w": 7, "x": 10, "y": 4},
       "options": {"orientation": "horizontal", "displayMode": "gradient"},
       "fieldConfig": {"defaults": {"thresholds": {"steps": [{"color": "green", "value": null}, {"color": "red", "value": 1}]}}},
       "targets": [{"refId": "A", "expr": "sum by (category) (ppdm_activity_count{server=~\"$server\", category=~\"$category\", result_status=\"FAILED\"})", "legendFormat": "{{category}}", "instant": true}]
@@ -103,7 +99,7 @@
     {
       "id": 13, "type": "piechart", "title": "Data protected by category",
       "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "gridPos": {"h": 9, "w": 5, "x": 19, "y": 4},
+      "gridPos": {"h": 9, "w": 7, "x": 17, "y": 4},
       "options": {"pieType": "donut", "legend": {"displayMode": "table", "placement": "bottom", "values": ["value"]}, "reduceOptions": {"calcs": ["lastNotNull"]}},
       "fieldConfig": {"defaults": {"unit": "bytes"}},
       "targets": [{"refId": "A", "expr": "sum by (category) (ppdm_activity_bytes_total{server=~\"$server\", category=~\"$category\"})", "legendFormat": "{{category}}", "instant": true}]
@@ -138,7 +134,7 @@
         "overrides": [
           {"matcher": {"id": "byName", "options": "status"}, "properties": [{"id": "custom.cellOptions", "value": {"type": "color-text"}}, {"id": "mappings", "value": [{"type": "value", "options": {"FAILED": {"color": "red", "index": 0}, "SUCCESS": {"color": "green", "index": 1}, "OK": {"color": "green", "index": 2}, "RUNNING": {"color": "blue", "index": 3}}}]}]},
           {"matcher": {"id": "byName", "options": "bytes"}, "properties": [{"id": "unit", "value": "bytes"}]},
-          {"matcher": {"id": "byName", "options": "duration"}, "properties": [{"id": "unit", "value": "s"}]}
+          {"matcher": {"id": "byName", "options": "duration"}, "properties": [{"id": "unit", "value": "dtdurations"}]}
         ]
       },
       "targets": [
