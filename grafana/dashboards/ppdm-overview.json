@@ -7,7 +7,7 @@
   "tags": ["ppdm", "dell", "backup"],
   "timezone": "",
   "schemaVersion": 39,
-  "version": 2,
+  "version": 3,
   "refresh": "30s",
   "time": {"from": "now-6h", "to": "now"},
   "templating": {
@@ -22,6 +22,17 @@
         "includeAll": true,
         "multi": true,
         "current": {"text": "All", "value": "$__all"}
+      },
+      {
+        "name": "category",
+        "label": "Activity category",
+        "type": "query",
+        "datasource": {"type": "prometheus", "uid": "prometheus"},
+        "query": "label_values(ppdm_activity_count{server=~\"$server\"}, category)",
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true,
+        "current": {"text": "All", "value": "$__all"}
       }
     ]
   },
@@ -30,49 +41,49 @@
       "id": 1, "type": "stat", "title": "Servers up",
       "datasource": {"type": "prometheus", "uid": "prometheus"},
       "gridPos": {"h": 4, "w": 4, "x": 0, "y": 0},
-      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background", "graphMode": "none", "textMode": "value_and_name"},
-      "fieldConfig": {"defaults": {"mappings": [{"type": "value", "options": {"0": {"text": "DOWN", "color": "red"}, "1": {"text": "UP", "color": "green"}}}], "thresholds": {"steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}}},
-      "targets": [{"refId": "A", "expr": "ppdm_up{server=~\"$server\"}", "legendFormat": "{{server}}"}]
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value", "graphMode": "none", "textMode": "value"},
+      "fieldConfig": {"defaults": {"thresholds": {"steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}}},
+      "targets": [{"refId": "A", "expr": "sum(ppdm_up{server=~\"$server\"}) or vector(0)"}]
     },
     {
       "id": 2, "type": "stat", "title": "Collectors degraded",
       "datasource": {"type": "prometheus", "uid": "prometheus"},
       "gridPos": {"h": 4, "w": 4, "x": 4, "y": 0},
-      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background", "graphMode": "none"},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value", "graphMode": "none"},
       "fieldConfig": {"defaults": {"thresholds": {"steps": [{"color": "green", "value": null}, {"color": "red", "value": 1}]}}},
       "targets": [{"refId": "A", "expr": "count(ppdm_collector_up{server=~\"$server\"} == 0) or vector(0)"}]
     },
     {
-      "id": 3, "type": "stat", "title": "Protected assets",
+      "id": 3, "type": "stat", "title": "Protected %",
       "datasource": {"type": "prometheus", "uid": "prometheus"},
       "gridPos": {"h": 4, "w": 4, "x": 8, "y": 0},
-      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value", "graphMode": "area"},
-      "fieldConfig": {"defaults": {"color": {"mode": "fixed", "fixedColor": "green"}}},
-      "targets": [{"refId": "A", "expr": "sum(ppdm_asset_count{server=~\"$server\", protection_status=\"PROTECTED\"})"}]
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value", "graphMode": "none"},
+      "fieldConfig": {"defaults": {"unit": "percentunit", "min": 0, "max": 1, "thresholds": {"steps": [{"color": "red", "value": null}, {"color": "orange", "value": 0.9}, {"color": "green", "value": 0.99}]}}},
+      "targets": [{"refId": "A", "expr": "sum(ppdm_asset_count{server=~\"$server\", protection_status=\"PROTECTED\"}) / clamp_min(sum(ppdm_asset_count{server=~\"$server\"}), 1)"}]
     },
     {
-      "id": 4, "type": "stat", "title": "Unprotected assets",
+      "id": 4, "type": "stat", "title": "Assets at risk",
       "datasource": {"type": "prometheus", "uid": "prometheus"},
       "gridPos": {"h": 4, "w": 4, "x": 12, "y": 0},
-      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background", "graphMode": "none"},
-      "fieldConfig": {"defaults": {"thresholds": {"steps": [{"color": "green", "value": null}, {"color": "orange", "value": 1}]}}},
-      "targets": [{"refId": "A", "expr": "sum(ppdm_asset_unprotected{server=~\"$server\"})"}]
-    },
-    {
-      "id": 5, "type": "stat", "title": "Assets at risk (overdue)",
-      "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "gridPos": {"h": 4, "w": 4, "x": 16, "y": 0},
-      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background", "graphMode": "none"},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value", "graphMode": "none"},
       "fieldConfig": {"defaults": {"thresholds": {"steps": [{"color": "green", "value": null}, {"color": "orange", "value": 1}, {"color": "red", "value": 5}]}}},
       "targets": [{"refId": "A", "expr": "count(ppdm_asset_last_copy_age_seconds{server=~\"$server\"}) or vector(0)"}]
     },
     {
-      "id": 6, "type": "stat", "title": "Critical alerts",
+      "id": 5, "type": "stat", "title": "Critical alerts",
       "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "gridPos": {"h": 4, "w": 4, "x": 20, "y": 0},
-      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background", "graphMode": "none"},
+      "gridPos": {"h": 4, "w": 4, "x": 16, "y": 0},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value", "graphMode": "none"},
       "fieldConfig": {"defaults": {"thresholds": {"steps": [{"color": "green", "value": null}, {"color": "red", "value": 1}]}}},
       "targets": [{"refId": "A", "expr": "sum(ppdm_alert_count{server=~\"$server\", severity=\"CRITICAL\"}) or vector(0)"}]
+    },
+    {
+      "id": 6, "type": "stat", "title": "Success rate 24h",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 4, "w": 4, "x": 20, "y": 0},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value", "graphMode": "none"},
+      "fieldConfig": {"defaults": {"unit": "percentunit", "min": 0, "max": 1, "thresholds": {"steps": [{"color": "red", "value": null}, {"color": "orange", "value": 0.9}, {"color": "green", "value": 0.99}]}}},
+      "targets": [{"refId": "A", "expr": "sum(ppdm_activity_count{server=~\"$server\", result_status=~\"SUCCESS|OK\"}) / clamp_min(sum(ppdm_activity_count{server=~\"$server\"}), 1)"}]
     },
 
     {"id": 100, "type": "row", "title": "Backup activity", "gridPos": {"h": 1, "w": 24, "x": 0, "y": 4}, "collapsed": false, "panels": []},
@@ -80,7 +91,7 @@
       "id": 10, "type": "timeseries", "title": "Activity outcomes (jobs in lookback window)",
       "datasource": {"type": "prometheus", "uid": "prometheus"},
       "gridPos": {"h": 8, "w": 12, "x": 0, "y": 5},
-      "fieldConfig": {"defaults": {"custom": {"drawStyle": "bars", "stacking": {"mode": "normal"}, "fillOpacity": 70}}, "overrides": [{"matcher": {"id": "byRegexp", "options": ".*FAILED.*"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "red"}}]}, {"matcher": {"id": "byRegexp", "options": ".*SUCCESS.*"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "green"}}]}]},
+      "fieldConfig": {"defaults": {"links": [{"title": "Open in Backup Report", "url": "/d/ppdm-backup-report?var-server=${server}&var-category=${category}", "targetBlank": false}], "custom": {"drawStyle": "bars", "stacking": {"mode": "normal"}, "fillOpacity": 70}}, "overrides": [{"matcher": {"id": "byRegexp", "options": ".*FAILED.*"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "red"}}]}, {"matcher": {"id": "byRegexp", "options": ".*(SUCCESS|OK).*"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "green"}}]}]},
       "options": {"legend": {"displayMode": "table", "placement": "right", "calcs": ["lastNotNull"]}},
       "targets": [{"refId": "A", "expr": "sum by (category, result_status) (ppdm_activity_count{server=~\"$server\"})", "legendFormat": "{{category}} / {{result_status}}"}]
     },
@@ -88,7 +99,7 @@
       "id": 11, "type": "timeseries", "title": "Data transferred by category",
       "datasource": {"type": "prometheus", "uid": "prometheus"},
       "gridPos": {"h": 8, "w": 8, "x": 12, "y": 5},
-      "fieldConfig": {"defaults": {"unit": "bytes", "custom": {"drawStyle": "line", "fillOpacity": 20}}},
+      "fieldConfig": {"defaults": {"unit": "bytes", "links": [{"title": "Open in Backup Report", "url": "/d/ppdm-backup-report?var-server=${server}&var-category=${category}", "targetBlank": false}], "custom": {"drawStyle": "line", "fillOpacity": 20}}},
       "options": {"legend": {"displayMode": "list", "placement": "bottom"}},
       "targets": [{"refId": "A", "expr": "sum by (category) (ppdm_activity_bytes_total{server=~\"$server\"})", "legendFormat": "{{category}}"}]
     },
@@ -96,64 +107,52 @@
       "id": 12, "type": "gauge", "title": "PROTECT success rate",
       "datasource": {"type": "prometheus", "uid": "prometheus"},
       "gridPos": {"h": 8, "w": 4, "x": 20, "y": 5},
-      "fieldConfig": {"defaults": {"unit": "percentunit", "min": 0, "max": 1, "thresholds": {"steps": [{"color": "red", "value": null}, {"color": "orange", "value": 0.9}, {"color": "green", "value": 0.99}]}}},
-      "targets": [{"refId": "A", "expr": "sum(ppdm_activity_count{server=~\"$server\", category=\"PROTECT\", result_status=\"SUCCESS\"}) / clamp_min(sum(ppdm_activity_count{server=~\"$server\", category=\"PROTECT\"}), 1)"}]
-    },
-    {
-      "id": 13, "type": "table", "title": "Activity breakdown",
-      "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "gridPos": {"h": 7, "w": 12, "x": 0, "y": 13},
-      "options": {"showHeader": true},
-      "targets": [{"refId": "A", "expr": "sum by (server, category, result_status) (ppdm_activity_count{server=~\"$server\"})", "format": "table", "instant": true}],
-      "transformations": [{"id": "organize", "options": {"excludeByName": {"Time": true, "__name__": true}, "renameByName": {"Value": "jobs"}}}]
-    },
-    {
-      "id": 14, "type": "bargauge", "title": "Failed jobs by category",
-      "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "gridPos": {"h": 7, "w": 12, "x": 12, "y": 13},
-      "options": {"orientation": "horizontal", "displayMode": "gradient"},
-      "fieldConfig": {"defaults": {"thresholds": {"steps": [{"color": "green", "value": null}, {"color": "red", "value": 1}]}}},
-      "targets": [{"refId": "A", "expr": "sum by (category) (ppdm_activity_count{server=~\"$server\", result_status=\"FAILED\"})", "legendFormat": "{{category}}", "instant": true}]
+      "fieldConfig": {"defaults": {"unit": "percentunit", "min": 0, "max": 1, "links": [{"title": "Open in Backup Report", "url": "/d/ppdm-backup-report?var-server=${server}&var-category=PROTECT", "targetBlank": false}], "thresholds": {"steps": [{"color": "red", "value": null}, {"color": "orange", "value": 0.9}, {"color": "green", "value": 0.99}]}}},
+      "targets": [{"refId": "A", "expr": "sum(ppdm_activity_count{server=~\"$server\", category=\"PROTECT\", result_status=~\"SUCCESS|OK\"}) / clamp_min(sum(ppdm_activity_count{server=~\"$server\", category=\"PROTECT\"}), 1)"}]
     },
 
-    {"id": 200, "type": "row", "title": "Asset protection", "gridPos": {"h": 1, "w": 24, "x": 0, "y": 20}, "collapsed": false, "panels": []},
+    {"id": 200, "type": "row", "title": "Asset protection", "gridPos": {"h": 1, "w": 24, "x": 0, "y": 13}, "collapsed": false, "panels": []},
     {
       "id": 20, "type": "piechart", "title": "Assets by protection status",
       "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 21},
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 14},
       "options": {"pieType": "donut", "legend": {"displayMode": "table", "placement": "right", "values": ["value"]}},
-      "fieldConfig": {"defaults": {"overrides": []}, "overrides": [{"matcher": {"id": "byName", "options": "PROTECTED"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "green"}}]}, {"matcher": {"id": "byName", "options": "UNPROTECTED"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "red"}}]}, {"matcher": {"id": "byName", "options": "LAPSED"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "orange"}}]}]},
+      "fieldConfig": {"defaults": {}, "overrides": [{"matcher": {"id": "byName", "options": "PROTECTED"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "green"}}]}, {"matcher": {"id": "byName", "options": "UNPROTECTED"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "red"}}]}, {"matcher": {"id": "byName", "options": "LAPSED"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "orange"}}]}]},
       "targets": [{"refId": "A", "expr": "sum by (protection_status) (ppdm_asset_count{server=~\"$server\"})", "legendFormat": "{{protection_status}}", "instant": true}]
     },
     {
       "id": 21, "type": "bargauge", "title": "Assets by type",
       "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 21},
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 14},
       "options": {"orientation": "horizontal", "displayMode": "lcd"},
       "targets": [{"refId": "A", "expr": "sum by (type) (ppdm_asset_count{server=~\"$server\"})", "legendFormat": "{{type}}", "instant": true}]
     },
     {
       "id": 22, "type": "table", "title": "Assets at risk — last copy age",
       "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 21},
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 14},
       "options": {"showHeader": true, "sortBy": [{"displayName": "age", "desc": true}]},
-      "fieldConfig": {"defaults": {"custom": {"cellOptions": {"type": "color-background"}}, "unit": "s", "thresholds": {"steps": [{"color": "green", "value": null}, {"color": "orange", "value": 86400}, {"color": "red", "value": 172800}]}}, "overrides": [{"matcher": {"id": "byName", "options": "age"}, "properties": [{"id": "unit", "value": "s"}]}]},
+      "fieldConfig": {"defaults": {"custom": {"align": "auto"}}, "overrides": [{"matcher": {"id": "byName", "options": "age"}, "properties": [{"id": "unit", "value": "dtdurations"}, {"id": "custom.cellOptions", "value": {"type": "color-background"}}, {"id": "thresholds", "value": {"steps": [{"color": "green", "value": null}, {"color": "orange", "value": 86400}, {"color": "red", "value": 172800}]}}]}]},
       "targets": [{"refId": "A", "expr": "ppdm_asset_last_copy_age_seconds{server=~\"$server\"}", "format": "table", "instant": true}],
-      "transformations": [{"id": "organize", "options": {"excludeByName": {"Time": true, "__name__": true, "job": true, "instance": true}, "renameByName": {"Value": "age"}}}]
+      "transformations": [
+        {"id": "labelsToFields", "options": {"mode": "columns"}},
+        {"id": "organize", "options": {"excludeByName": {"Time": true, "__name__": true, "job": true, "instance": true, "server": true}, "renameByName": {"Value": "age", "asset": "Asset", "name": "Asset", "type": "Type"}}},
+        {"id": "sortBy", "options": {"fields": "", "sort": [{"field": "age", "desc": true}]}}
+      ]
     },
 
-    {"id": 300, "type": "row", "title": "Capacity", "gridPos": {"h": 1, "w": 24, "x": 0, "y": 29}, "collapsed": false, "panels": []},
+    {"id": 300, "type": "row", "title": "Capacity", "gridPos": {"h": 1, "w": 24, "x": 0, "y": 22}, "collapsed": false, "panels": []},
     {
       "id": 30, "type": "gauge", "title": "Storage system % used",
       "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 30},
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 23},
       "fieldConfig": {"defaults": {"unit": "percentunit", "min": 0, "max": 1, "thresholds": {"steps": [{"color": "green", "value": null}, {"color": "orange", "value": 0.8}, {"color": "red", "value": 0.9}]}}},
       "targets": [{"refId": "A", "expr": "ppdm_storage_system_used_bytes{server=~\"$server\"} / clamp_min(ppdm_storage_system_total_bytes{server=~\"$server\"}, 1)", "legendFormat": "{{storage_system}}"}]
     },
     {
       "id": 31, "type": "timeseries", "title": "Storage system used vs total",
       "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 30},
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 23},
       "fieldConfig": {"defaults": {"unit": "bytes", "custom": {"drawStyle": "line", "fillOpacity": 15}}},
       "targets": [
         {"refId": "A", "expr": "ppdm_storage_system_used_bytes{server=~\"$server\"}", "legendFormat": "{{storage_system}} used"},
@@ -161,28 +160,32 @@
       ]
     },
     {
-      "id": 32, "type": "bargauge", "title": "Storage units — physical used",
+      "id": 32, "type": "bargauge", "title": "Storage units — % full",
       "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 30},
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 23},
       "options": {"orientation": "horizontal", "displayMode": "gradient"},
-      "fieldConfig": {"defaults": {"unit": "bytes"}},
-      "targets": [{"refId": "A", "expr": "ppdm_storage_unit_physical_used_bytes{server=~\"$server\"}", "legendFormat": "{{storage_unit}}", "instant": true}]
+      "fieldConfig": {"defaults": {"unit": "percentunit", "min": 0, "max": 1, "thresholds": {"steps": [{"color": "green", "value": null}, {"color": "orange", "value": 0.8}, {"color": "red", "value": 0.9}]}}},
+      "targets": [{"refId": "A", "expr": "ppdm_storage_unit_physical_used_bytes{server=~\"$server\"} / clamp_min(ppdm_storage_unit_physical_capacity_bytes{server=~\"$server\"}, 1)", "legendFormat": "{{storage_unit}}", "instant": true}]
     },
 
-    {"id": 400, "type": "row", "title": "Health & alerts", "gridPos": {"h": 1, "w": 24, "x": 0, "y": 38}, "collapsed": false, "panels": []},
+    {"id": 400, "type": "row", "title": "Health & alerts", "gridPos": {"h": 1, "w": 24, "x": 0, "y": 31}, "collapsed": false, "panels": []},
     {
       "id": 40, "type": "table", "title": "Health entities",
       "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 39},
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 32},
       "options": {"showHeader": true},
-      "fieldConfig": {"defaults": {"custom": {"cellOptions": {"type": "color-background"}}, "mappings": [{"type": "value", "options": {"0": {"text": "NOT OK", "color": "red"}, "1": {"text": "OK", "color": "green"}}}], "thresholds": {"steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}}},
+      "fieldConfig": {"defaults": {"custom": {"align": "auto"}}, "overrides": [{"matcher": {"id": "byName", "options": "status"}, "properties": [{"id": "custom.cellOptions", "value": {"type": "color-background"}}, {"id": "mappings", "value": [{"type": "value", "options": {"0": {"text": "NOT OK", "color": "red"}, "1": {"text": "OK", "color": "green"}}}]}, {"id": "thresholds", "value": {"steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}}]}]},
       "targets": [{"refId": "A", "expr": "ppdm_health_entity_status{server=~\"$server\"}", "format": "table", "instant": true}],
-      "transformations": [{"id": "organize", "options": {"excludeByName": {"Time": true, "__name__": true, "job": true, "instance": true}, "renameByName": {"Value": "status"}}}]
+      "transformations": [
+        {"id": "labelsToFields", "options": {"mode": "columns"}},
+        {"id": "organize", "options": {"excludeByName": {"Time": true, "__name__": true, "job": true, "instance": true, "server": true}, "renameByName": {"Value": "status"}}},
+        {"id": "sortBy", "options": {"fields": "", "sort": [{"field": "status", "desc": false}]}}
+      ]
     },
     {
       "id": 41, "type": "bargauge", "title": "Open alerts by severity",
       "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 39},
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 32},
       "options": {"orientation": "horizontal", "displayMode": "gradient"},
       "fieldConfig": {"defaults": {}, "overrides": [{"matcher": {"id": "byName", "options": "CRITICAL"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "red"}}]}, {"matcher": {"id": "byName", "options": "WARNING"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "orange"}}]}, {"matcher": {"id": "byName", "options": "INFORMATIONAL"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "blue"}}]}]},
       "targets": [{"refId": "A", "expr": "sum by (severity) (ppdm_alert_count{server=~\"$server\"})", "legendFormat": "{{severity}}", "instant": true}]
@@ -190,7 +193,7 @@
     {
       "id": 42, "type": "timeseries", "title": "Alerts over time (by severity)",
       "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 39},
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 32},
       "fieldConfig": {"defaults": {"custom": {"drawStyle": "line", "fillOpacity": 25, "stacking": {"mode": "normal"}}}, "overrides": [{"matcher": {"id": "byName", "options": "CRITICAL"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "red"}}]}, {"matcher": {"id": "byName", "options": "WARNING"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "orange"}}]}]},
       "targets": [{"refId": "A", "expr": "sum by (severity) (ppdm_alert_count{server=~\"$server\"})", "legendFormat": "{{severity}}"}]
     }
