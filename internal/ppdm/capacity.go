@@ -6,21 +6,25 @@ import (
 	"github.com/fjacquet/ppdm_exporter/internal/ppdmclient"
 )
 
-// mtree is the provisional shape of a /api/v2/datadomain-mtrees content item.
-// Capacity field names are unconfirmed by every source (ambiguous in the PDF) — ADR-0009.
+// mtree is one /api/v2/datadomain-mtrees content item (20.1.0 DataDomainMTree, ADR-0010).
+// 20.1.0 exposes total + available; used is derived. No logical-used field exists.
 type mtree struct {
-	Name         string  `json:"name"`                  // provisional
-	PhysicalCap  float64 `json:"physicalCapacityBytes"` // provisional
-	PhysicalUsed float64 `json:"physicalUsedBytes"`     // provisional
-	LogicalUsed  float64 `json:"logicalUsedBytes"`      // provisional
+	Name      string  `json:"name"`
+	TotalCap  float64 `json:"totalCapacityInBytes"`
+	Available float64 `json:"availableCapacityInBytes"`
 }
 
-// storageSystem is the provisional shape of a /api/v2/storage-systems content item.
+// storageSystem is one /api/v2/storage-systems content item (20.1.0 StorageSystem, ADR-0010).
+// DataDomain capacity is nested under details.dataDomain.
 type storageSystem struct {
-	Name      string  `json:"name"`           // provisional
-	Type      string  `json:"type"`           // provisional
-	TotalSize float64 `json:"totalSizeBytes"` // provisional
-	UsedSize  float64 `json:"usedSizeBytes"`  // provisional
+	Name    string `json:"name"`
+	Type    string `json:"type"`
+	Details struct {
+		DataDomain struct {
+			TotalSize float64 `json:"totalSize"`
+			TotalUsed float64 `json:"totalUsed"`
+		} `json:"dataDomain"`
+	} `json:"details"`
 }
 
 // Capacity collects storage-unit (MTree) and storage-system capacity in bytes.
@@ -41,16 +45,15 @@ func (Capacity) Collect(ctx context.Context, c ppdmclient.Client) ([]Sample, err
 	for _, m := range mtrees {
 		su := []Label{{Key: "storage_unit", Value: m.Name}}
 		out = append(out,
-			Sample{Name: "ppdm_storage_unit_physical_capacity_bytes", Value: m.PhysicalCap, Labels: su},
-			Sample{Name: "ppdm_storage_unit_physical_used_bytes", Value: m.PhysicalUsed, Labels: su},
-			Sample{Name: "ppdm_storage_unit_logical_used_bytes", Value: m.LogicalUsed, Labels: su},
+			Sample{Name: "ppdm_storage_unit_physical_capacity_bytes", Value: m.TotalCap, Labels: su},
+			Sample{Name: "ppdm_storage_unit_physical_used_bytes", Value: m.TotalCap - m.Available, Labels: su}, // derived: total minus available
 		)
 	}
 	for _, s := range systems {
 		sl := []Label{{Key: "storage_system", Value: s.Name}, {Key: "type", Value: s.Type}}
 		out = append(out,
-			Sample{Name: "ppdm_storage_system_total_bytes", Value: s.TotalSize, Labels: sl},
-			Sample{Name: "ppdm_storage_system_used_bytes", Value: s.UsedSize, Labels: sl},
+			Sample{Name: "ppdm_storage_system_total_bytes", Value: s.Details.DataDomain.TotalSize, Labels: sl},
+			Sample{Name: "ppdm_storage_system_used_bytes", Value: s.Details.DataDomain.TotalUsed, Labels: sl},
 		)
 	}
 	return out, nil

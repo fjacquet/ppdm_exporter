@@ -32,7 +32,6 @@ func TestCapacityCollect(t *testing.T) {
 	want := map[string]float64{
 		"ppdm_storage_unit_physical_capacity_bytes|/data/col1/su-policy-a|": 3220957036544,
 		"ppdm_storage_unit_physical_used_bytes|/data/col1/su-policy-a|":     342523641856,
-		"ppdm_storage_unit_logical_used_bytes|/data/col1/su-policy-a|":      1099511627776,
 		"ppdm_storage_system_total_bytes||ddve-01":                          3220957036544,
 		"ppdm_storage_system_used_bytes||ddve-01":                           342523641856,
 	}
@@ -40,5 +39,8 @@ func TestCapacityCollect(t *testing.T) {
 		if seen[k] != v {
 			t.Errorf("%s = %v, want %v", k, seen[k], v)
 		}
+	}
+	if _, ok := seen["ppdm_storage_unit_logical_used_bytes|/data/col1/su-policy-a|"]; ok {
+		t.Error("ppdm_storage_unit_logical_used_bytes should no longer be emitted")
 	}
 }

@@ -1,6 +1,6 @@
 {
   "page": {"number": 0, "totalPages": 1},
   "content": [
-    {"name":"/data/col1/su-policy-a","physicalCapacityBytes":3220957036544,"physicalUsedBytes":342523641856,"logicalUsedBytes":1099511627776}
+    {"name":"/data/col1/su-policy-a","totalCapacityInBytes":3220957036544,"availableCapacityInBytes":2878433394688}
   ]
 }

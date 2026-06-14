@@ -25,9 +25,8 @@ type Job struct {
 	Category    string `json:"category"`
 	Subcategory string `json:"subcategory"`
 	State       string `json:"state"`
-	CreatedAt   string `json:"createdAt"`
-	StartedAt   string `json:"startedAt"`
-	CompletedAt string `json:"completedAt"`
+	CreateTime  string `json:"createTime"`
+	EndTime     string `json:"endTime"`
 	Result      struct {
 		Status           string  `json:"status"`
 		BytesTransferred float64 `json:"bytesTransferred"`
@@ -35,10 +34,10 @@ type Job struct {
 	Asset struct {
 		ID   string `json:"id"`
 		Name string `json:"name"`
-	} `json:"asset"` // provisional
+	} `json:"asset"`
 	ProtectionPolicy struct {
 		Name string `json:"name"`
-	} `json:"protectionPolicy"` // provisional
+	} `json:"protectionPolicy"`
 }
 
 func (j Job) status() string {
@@ -48,36 +47,40 @@ func (j Job) status() string {
 	return j.State
 }
 
-// Copy is one /api/v2/copies record (a backup copy with retention + location). Provisional.
+// Copy is one /api/v2/latest-copies record (20.1.0 Copy, ADR-0010). policyName and
+// expirationTime have no 20.1.0 source and are not captured (columns remain, NULL).
 type Copy struct {
 	ID              string  `json:"id"`
-	AssetID         string  `json:"assetId"`         // provisional
-	PolicyName      string  `json:"policyName"`      // provisional
-	CopyType        string  `json:"copyType"`        // provisional
-	CreateTime      string  `json:"createTime"`      // provisional
-	ExpirationTime  string  `json:"expirationTime"`  // provisional
-	RetentionTime   string  `json:"retentionTime"`   // provisional
-	RetentionLock   bool    `json:"retentionLock"`   // provisional
-	StorageSystemID string  `json:"storageSystemId"` // provisional
-	Location        string  `json:"location"`        // provisional
-	Size            float64 `json:"size"`            // provisional
+	AssetID         string  `json:"assetId"`
+	CopyType        string  `json:"copyType"`
+	CreateTime      string  `json:"createTime"`
+	RetentionTime   string  `json:"retentionTime"`
+	RetentionLock   string  `json:"retentionLock"` // enum ALL_COPIES_UNLOCKED|ALL_COPIES_LOCKED|PARTIAL_COPIES_LOCKED
+	StorageSystemID string  `json:"storageSystemId"`
+	Location        string  `json:"location"`
+	Size            float64 `json:"size"`
 }
 
-// Asset is one /api/v2/assets record (current protection state).
+// locked reports whether this copy is retention-locked (wholly or partially), feeding the has_immutable rollup.
+func (c Copy) locked() bool {
+	return c.RetentionLock == "ALL_COPIES_LOCKED" || c.RetentionLock == "PARTIAL_COPIES_LOCKED"
+}
+
+// Asset is one /api/v2/assets record (current protection state; 20.1.0 Asset, ADR-0010).
 type Asset struct {
 	ID                    string `json:"id"`
 	Name                  string `json:"name"`
 	Type                  string `json:"type"`
-	ProtectionStatus      string `json:"protectionStatus"`      // provisional
-	LastAvailableCopyTime string `json:"lastAvailableCopyTime"` // provisional
+	ProtectionStatus      string `json:"protectionStatus"`
+	LastAvailableCopyTime string `json:"lastAvailableCopyTime"`
 	ProtectionPolicy      struct {
 		Name string `json:"name"`
-	} `json:"protectionPolicy"` // provisional
+	} `json:"protectionPolicy"`
 }
 
 // Policy is one /api/v3/protection-policies record. Objectives kept as raw JSON.
 type Policy struct {
 	ID         string `json:"id"`
 	Name       string `json:"name"`
-	Objectives any    `json:"objectives"` // provisional; stored as jsonb
+	Objectives any    `json:"objectives"` // stored as jsonb
 }

@@ -1,4 +1,0 @@
-{"page":{"number":0,"totalPages":1},"content":[
-  {"name":"ppdm-server","component":"SYSTEM","status":"OK"},
-  {"name":"dd-storage","component":"STORAGE","status":"WARNING"}
-]}

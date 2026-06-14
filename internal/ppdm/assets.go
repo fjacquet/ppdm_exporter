@@ -7,11 +7,12 @@ import (
 	"github.com/fjacquet/ppdm_exporter/internal/ppdmclient"
 )
 
+// asset is one /api/v2/assets content item, validated against the 20.1.0 Asset schema (ADR-0010).
 type asset struct {
 	Name                  string `json:"name"`
-	Type                  string `json:"type"`                  // confirmed (assetmgmt.py)
-	ProtectionStatus      string `json:"protectionStatus"`      // provisional enum
-	LastAvailableCopyTime string `json:"lastAvailableCopyTime"` // provisional; RFC3339 or "" (null)
+	Type                  string `json:"type"`
+	ProtectionStatus      string `json:"protectionStatus"`
+	LastAvailableCopyTime string `json:"lastAvailableCopyTime"` // RFC3339 or "" (null)
 }
 
 // Assets aggregates protection rollups plus a bounded per-asset SLA-age series.
