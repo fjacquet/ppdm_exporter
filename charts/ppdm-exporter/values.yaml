@@ -1,0 +1,153 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/fjacquet/ppdm_exporter
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  automount: true
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podLabels: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 9442
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+livenessProbe:
+  httpGet:
+    path: /health
+    port: http
+readinessProbe:
+  httpGet:
+    path: /health
+    port: http
+
+volumes: []
+# - name: config-extra
+#   emptyDir:
+#     sizeLimit: 16Mi
+# - name: foo
+#   secret:
+#     secretName: mysecret
+#     optional: false
+
+volumeMounts: []
+# - mountPath: /app/config
+#   name: config-extra
+# - name: foo
+#   mountPath: "/etc/foo"
+#   readOnly: true
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+extraArgs: []
+
+existingSecret: ""
+
+# Inline exporter config, rendered into a Secret and mounted at
+# /etc/ppdm_exporter/config.yaml (the default --config path from the Dockerfile CMD).
+# Replace placeholder values with real PPDM credentials.
+config: |
+  server:
+    host: "0.0.0.0"
+    port: "9442"
+    uri: "/metrics"
+  collection:
+    interval: "5m"
+    timeout: "60s"
+    lookback: "24h"
+    assetAgeThreshold: "24h"
+    perJobActivities: false
+  otel:
+    enabled: false
+    endpoint: "localhost:4317"
+    insecure: true
+    interval: "30s"
+  servers:
+    - name: ppdm-prod-01
+      host: "PPDM_HOSTNAME"
+      port: 8443
+      username: "PPDM_USERNAME"
+      password: "PPDM_PASSWORD"
+      insecureSkipVerify: true
+
+env: []
+# - name: PPDM1_HOSTNAME
+#   value: ppdm.example.com
+# - name: PPDM1_USERNAME
+#   value: admin
+# - name: PPDM1_PASSWORD
+#   valueFrom:
+#     secretKeyRef:
+#        name: my-external-ppdm-secret
+#        key: ppdm-password
+
+deploymentAnnotations: {}
+
+podAnnotations:
+  prometheus.io/scrape: "false"
+  prometheus.io/path: "/metrics"
+  prometheus.io/port: "9442"
+
+prometheus:
+  monitor:
+    enabled: false
+    additionalLabels: {}
+    interval: 15s
+    namespace: []
+    metricRelabelings: []
+    relabelings: []
+    targetLabels: []
+
+  rules:
+    enabled: false
+    additionalLabels: {}
+    namespace: ""
+    additionalRules: []
+
+  scrapeConfig:
+    enabled: false
+    additionalLabels: {}
+    namespace: ""
+    interval: 60s
+    scrapeTimeout: 55s
+    metricRelabelings: []
+    relabelings: []
