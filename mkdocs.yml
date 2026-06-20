@@ -1,6 +1,7 @@
 site_name: ppdm_exporter
 site_description: Prometheus + OTLP exporter for Dell PowerProtect Data Manager
 repo_url: https://github.com/fjacquet/ppdm_exporter
+repo_name: fjacquet/ppdm_exporter
 exclude_docs: |
   superpowers/
 theme:
@@ -32,3 +33,6 @@ nav:
       - 0007 Naming & units: adr/0007-metric-naming-and-units.md
       - 0008 Serve before collect: adr/0008-serve-http-before-first-collect.md
       - 0009 Provisional API mappings: adr/0009-provisional-api-mappings.md
+
+extra:
+  version: v2.0.2
