@@ -35,6 +35,26 @@ a silent auth failure at collection time.
 
 Alternatively set `passwordFile: /run/secrets/ppdm01` to read the password from a file.
 
+### Passwords with special characters
+
+Any character is safe end to end — the password is sent in a JSON request body, so
+nothing needs URL-encoding. The only place quoting matters is **parsing at load time**,
+and it differs by where you put the password:
+
+| Source | Rule |
+|---|---|
+| `.env`, single-quoted `'…'` | Fully literal — no `$` expansion, no `\` escapes, no `#` comment. Best default. Cannot contain a literal `'`. |
+| `.env`, double-quoted `"…"` | Expands `$VAR`/`${VAR}` and processes `\` escapes. `$`, `\`, `"` are special — write `\$`, `\\`, `\"`. |
+| `.env`, unquoted | `$VAR` expands; a ` #` (space-hash) starts a comment; a value **starting** with `'`/`"` is treated as quoted. |
+| `config.yaml` inline | Only the exact `${NAME}` token is interpolated (`os.LookupEnv`), so a literal password containing `${NAME}` is treated as an env ref. Prefer referencing an env var. |
+| `passwordFile` | Read **verbatim** (only surrounding whitespace trimmed) — no interpolation, no escaping. The bulletproof option. |
+
+For quotes inside the password specifically: use double quotes to include a `'`, single
+quotes to include a `"`. If the password has **both** `'` and `"` (or a `\`, or starts
+with a quote), use `passwordFile` — it needs no escaping at all. When referencing an env
+var from `config.yaml` (`password: "${PPDM1_PASSWORD}"`) the value is inserted verbatim
+and never re-scanned, so the env var itself may contain `$`, `${…}`, or any character.
+
 **Single-server convenience:** For a single server, you can drive the entire identity
 from environment variables (e.g. from a secrets manager or `.env` file) without editing
 `config.yaml`. Copy `.env.example` to `.env`, fill in the values, and `docker-compose`
