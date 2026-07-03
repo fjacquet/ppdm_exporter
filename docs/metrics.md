@@ -5,6 +5,15 @@ serves many servers. Collection follows the snapshot model: a background loop po
 each server on `collection.interval` and both `/metrics` and OTLP read the latest
 snapshot.
 
+## Exporter build info
+
+Exporter-level metric — no `server` label, since it identifies the exporter binary
+itself rather than any one PPDM server.
+
+| Metric | Labels | Type | Meaning |
+|---|---|---|---|
+| `ppdm_exporter_build_info` | `version`, `goversion` | gauge (`1`) | Constant `1`; the running exporter version and Go version are carried in the labels, so a scrape reveals exactly which build is serving `/metrics`. |
+
 ## Health & liveness
 
 | Metric | Labels | Type | Meaning |
