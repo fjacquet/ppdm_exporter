@@ -6,11 +6,68 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [2.0.6] - 2026-07-03
+
 ### Added
 
 - `ppdm_exporter_build_info{version, goversion}` metric (constant `1`) on `/metrics`,
   exposing the running exporter version and Go version so a scrape reveals exactly
   which build is serving metrics. Standard Prometheus build-info pattern.
+
+## [2.0.5] - 2026-07-03
+
+### Documentation
+
+- systemd deployment guide with a sample unit and environment file.
+- Design spec for exporter-core family extraction (approach A, recorded but not started).
+
+## [2.0.4] - 2026-07-01
+
+### Fixed
+
+- Bump `golang.org/x/image` to v0.43.0 to address advisory GO-2026-5061.
+
+### Documentation
+
+- Document handling of special characters in the monitoring password.
+- Use the brand icon as the MkDocs favicon and logo.
+
+## [2.0.3] - 2026-06-20
+
+### Changed
+
+- Dependency and CI bumps: `testcontainers-go` postgres module and `actions/checkout`.
+
+### Documentation
+
+- Add standard status badges to the README.
+
+## [2.0.2] - 2026-06-20
+
+### Changed
+
+- Migrate CI to the `fjacquet/ci` reusable (make-based) workflows, and make the
+  `security` job advisory to match the central default.
+
+## [2.0.1] - 2026-06-16
+
+### Added
+
+- Helm chart with lockstep publishing alongside the binary release.
+
+## [2.0.0] - 2026-06-14
+
+### Changed
+
+- **BREAKING:** the default metrics port is renumbered from `9102` to `9442`, part of a
+  family-wide contiguous port block. Scrape configs, firewall rules, and service
+  definitions pinning `9102` must be updated.
+- Bump Go dependencies.
+
+### Added
+
+- Vendored Node Exporter Full (Grafana 1860) companion dashboard, auto-provisioned in
+  the demo stack.
 
 ## [1.6.0] - 2026-06-14
 
