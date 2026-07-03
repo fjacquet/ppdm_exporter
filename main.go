@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"os/signal"
+	"runtime"
 	"sort"
 	"strings"
 	"syscall"
@@ -79,6 +80,7 @@ func run(cfgPath string, once, debug, trace bool) error {
 
 	reg := prometheus.NewRegistry()
 	reg.MustRegister(ppdm.NewPromCollector(store))
+	reg.MustRegister(ppdm.NewBuildInfoCollector(version, runtime.Version()))
 	mux := http.NewServeMux()
 	mux.Handle(cfg.Server.URI, promhttp.HandlerFor(reg, promhttp.HandlerOpts{}))
 	mux.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) { healthHandler(w, store) })

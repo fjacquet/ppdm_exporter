@@ -6,6 +6,12 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+
+- `ppdm_exporter_build_info{version, goversion}` metric (constant `1`) on `/metrics`,
+  exposing the running exporter version and Go version so a scrape reveals exactly
+  which build is serving metrics. Standard Prometheus build-info pattern.
+
 ## [1.6.0] - 2026-06-14
 
 ### Changed
