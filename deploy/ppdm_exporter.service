@@ -1,0 +1,42 @@
+[Unit]
+Description=PowerProtect Data Manager Exporter (Prometheus + OTLP)
+Documentation=https://github.com/fjacquet/ppdm_exporter
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ppdm
+Group=ppdm
+
+# Server secrets referenced as ${PPDM1_PASSWORD} etc. in config.yaml.
+# Keep this file mode 0600, owned root:ppdm.
+EnvironmentFile=/etc/ppdm_exporter/ppdm_exporter.env
+
+ExecStart=/usr/local/bin/ppdm_exporter --config /etc/ppdm_exporter/config.yaml
+# `systemctl reload ppdm_exporter` performs a live config reload (SIGHUP).
+ExecReload=/bin/kill -HUP $MAINPID
+
+Restart=on-failure
+RestartSec=5
+
+# Log to the journal (set `logName: ""` in config.yaml). View with:
+#   journalctl -u ppdm_exporter -f
+StandardOutput=journal
+StandardError=journal
+
+# --- Hardening (works with the journald logging above; no writable paths needed) ---
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6
+RestrictNamespaces=true
+LockPersonality=true
+
+[Install]
+WantedBy=multi-user.target
