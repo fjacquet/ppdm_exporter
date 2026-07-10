@@ -1,6 +1,10 @@
 # Release image: copies the prebuilt GoReleaser binary (no in-image compile).
+# buildx lays the cross-compiled binary out per-platform as
+# ${TARGETPLATFORM}/ppdm_exporter in the build context.
 FROM gcr.io/distroless/static:nonroot
-COPY ppdm_exporter /ppdm_exporter
+ARG TARGETPLATFORM
+COPY ${TARGETPLATFORM}/ppdm_exporter /ppdm_exporter
+COPY config.yaml /etc/ppdm_exporter/config.yaml
 USER nonroot:nonroot
 EXPOSE 9442
 ENTRYPOINT ["/ppdm_exporter"]

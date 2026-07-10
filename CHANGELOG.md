@@ -6,6 +6,20 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [2.0.7] - 2026-07-10
+
+### Security
+
+- Bump Go to 1.26.5 to patch GO-2026-5856 (`crypto/tls`), which `govulncheck`
+  flagged in the CI pipeline.
+
+### Fixed
+
+- Restore multi-arch GHCR image publishing by re-adding the `dockers_v2` block to
+  `.goreleaser.yaml`; releases now push `ghcr.io/fjacquet/ppdm_exporter` again.
+- Fix `Dockerfile.goreleaser` to COPY the per-platform `${TARGETPLATFORM}/ppdm_exporter`
+  binary that buildx lays out, instead of a flat path.
+
 ## [2.0.6] - 2026-07-03
 
 ### Added
