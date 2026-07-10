@@ -62,6 +62,31 @@ sboms:
     cmd: cyclonedx-gomod
     args: ["mod", "-licenses", "-json", "-output", "$document", "../"]
 
+# Multi-arch container image published to GHCR. The binary is cross-compiled by
+# the build pipe; buildx lays it out per-platform as ${TARGETPLATFORM}/ppdm_exporter.
+dockers_v2:
+  - id: ppdm_exporter
+    ids:
+      - ppdm_exporter
+    dockerfile: Dockerfile.goreleaser
+    images:
+      - "ghcr.io/fjacquet/ppdm_exporter"
+    tags:
+      - "{{ .Version }}"
+      - "{{ .Major }}.{{ .Minor }}"
+      - "{{ if not .Prerelease }}latest{{ end }}"
+    platforms:
+      - linux/amd64
+      - linux/arm64
+    extra_files:
+      - config.yaml
+    labels:
+      org.opencontainers.image.title: "{{ .ProjectName }}"
+      org.opencontainers.image.version: "{{ .Version }}"
+      org.opencontainers.image.revision: "{{ .FullCommit }}"
+      org.opencontainers.image.source: "https://github.com/fjacquet/ppdm_exporter"
+    sbom: true
+
 # Homebrew cask (macOS only). Published to a separate tap repo via a cross-repo PAT
 # (HOMEBREW_TAP_GITHUB_TOKEN); the default GITHUB_TOKEN cannot push to another repo.
 # skip_upload keeps releases and local snapshots working until that secret + tap exist.
