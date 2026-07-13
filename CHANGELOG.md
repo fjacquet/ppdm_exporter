@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [2.1.0] - 2026-07-14
+
 ### Added
 
 - `insecureSkipVerify` in `config.yaml` now accepts a `${VAR}` environment reference
