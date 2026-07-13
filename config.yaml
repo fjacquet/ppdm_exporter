@@ -23,4 +23,9 @@ servers:
     port: 8443
     username: "${PPDM1_USERNAME}"
     password: "${PPDM1_PASSWORD}"
+    # Skip TLS certificate verification for this server (INSECURE — use only on a
+    # trusted network / with self-signed certs). Accepts a native boolean or a
+    # ${VAR} reference resolved at startup:
+    #   insecureSkipVerify: true
+    #   insecureSkipVerify: ${PPDM1_SKIP_CERTIFICATE}
     insecureSkipVerify: true
