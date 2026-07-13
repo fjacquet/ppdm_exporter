@@ -26,6 +26,9 @@ servers:
 	if cfg.Servers[0].Password != "s3cret" {
 		t.Fatalf("password = %q, want s3cret", cfg.Servers[0].Password)
 	}
+	if !cfg.Servers[0].InsecureSkipVerify.Bool() {
+		t.Fatal("insecureSkipVerify native bool = false, want true")
+	}
 	if cfg.Servers[0].BaseURL() != "https://ppdm01.example.com:8443" {
 		t.Fatalf("BaseURL = %q, want :8443 default", cfg.Servers[0].BaseURL())
 	}
@@ -114,5 +117,90 @@ servers:
 	_ = os.WriteFile(path, []byte(yaml), 0o600)
 	if _, err := Load(path); err == nil {
 		t.Fatal("expected error for unset username env var reference")
+	}
+}
+
+func TestLoadInsecureSkipVerifyEnvRefTrue(t *testing.T) {
+	t.Setenv("PPDM1_SKIP_CERTIFICATE", "true")
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.yaml")
+	yaml := `
+servers:
+  - {name: ppdm01, host: h, username: u, password: p, insecureSkipVerify: "${PPDM1_SKIP_CERTIFICATE}"}
+`
+	if err := os.WriteFile(path, []byte(yaml), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := Load(path)
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if !cfg.Servers[0].InsecureSkipVerify.Bool() {
+		t.Fatal("insecureSkipVerify = false, want true (resolved from ${PPDM1_SKIP_CERTIFICATE})")
+	}
+}
+
+func TestLoadInsecureSkipVerifyEnvRefFalse(t *testing.T) {
+	t.Setenv("PPDM1_SKIP_CERTIFICATE", "false")
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.yaml")
+	yaml := `
+servers:
+  - {name: ppdm01, host: h, username: u, password: p, insecureSkipVerify: "${PPDM1_SKIP_CERTIFICATE}"}
+`
+	if err := os.WriteFile(path, []byte(yaml), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := Load(path)
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if cfg.Servers[0].InsecureSkipVerify.Bool() {
+		t.Fatal("insecureSkipVerify = true, want false (resolved from ${PPDM1_SKIP_CERTIFICATE})")
+	}
+}
+
+func TestLoadInsecureSkipVerifyDefaultsFalseWhenOmitted(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.yaml")
+	yaml := `
+servers:
+  - {name: ppdm01, host: h, username: u, password: p}
+`
+	if err := os.WriteFile(path, []byte(yaml), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := Load(path)
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if cfg.Servers[0].InsecureSkipVerify.Bool() {
+		t.Fatal("insecureSkipVerify default = true, want false")
+	}
+}
+
+func TestLoadFailsOnUnsetInsecureSkipVerifyEnv(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "c.yaml")
+	yaml := `
+servers:
+  - {name: ppdm01, host: h, username: u, password: p, insecureSkipVerify: "${PPDM_SKIP_UNSET}"}
+`
+	_ = os.WriteFile(path, []byte(yaml), 0o600)
+	if _, err := Load(path); err == nil {
+		t.Fatal("expected error for unset insecureSkipVerify env var reference")
+	}
+}
+
+func TestLoadFailsOnNonBooleanInsecureSkipVerify(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "c.yaml")
+	yaml := `
+servers:
+  - {name: ppdm01, host: h, username: u, password: p, insecureSkipVerify: "maybe"}
+`
+	_ = os.WriteFile(path, []byte(yaml), 0o600)
+	if _, err := Load(path); err == nil {
+		t.Fatal("expected error for non-boolean insecureSkipVerify value")
 	}
 }

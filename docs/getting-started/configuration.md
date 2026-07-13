@@ -24,7 +24,7 @@ servers:
     port: 8443                       # PPDM REST API port (default 8443)
     username: "${PPDM1_USERNAME}"   # ${ENV} interpolation supported
     password: "${PPDM1_PASSWORD}"   # ${ENV} interpolation supported
-    insecureSkipVerify: true         # accept self-signed PPDM certs
+    insecureSkipVerify: true         # accept self-signed PPDM certs; also accepts ${ENV}
 ```
 
 ## Secrets and environment interpolation
@@ -32,6 +32,10 @@ servers:
 `${ENV_VAR}` references are interpolated from the environment in `host`, `username`,
 and `password` fields. An unset variable is a load-time error — fail fast rather than
 a silent auth failure at collection time.
+
+`insecureSkipVerify` accepts either a native YAML boolean (`true`/`false`) or a
+`${ENV_VAR}` reference resolved the same way, e.g.
+`insecureSkipVerify: ${PPDM1_SKIP_CERTIFICATE}`. It defaults to `false` when omitted.
 
 Alternatively set `passwordFile: /run/secrets/ppdm01` to read the password from a file.
 

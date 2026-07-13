@@ -6,6 +6,12 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+
+- `insecureSkipVerify` in `config.yaml` now accepts a `${VAR}` environment reference
+  (e.g. `${PPDM1_SKIP_CERTIFICATE}`) in addition to a native YAML boolean, resolved at
+  startup like the other `${PPDM1_*}` fields. Existing native-bool configs keep working.
+
 ## [2.0.7] - 2026-07-10
 
 ### Security
