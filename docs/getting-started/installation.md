@@ -20,7 +20,8 @@ docker run --rm -p 9442:9442 \
   ghcr.io/fjacquet/ppdm_exporter:latest
 ```
 
-The image is multi-arch (`linux/amd64`, `linux/arm64`), distroless, and runs as a non-root user.
+The image is multi-arch (`linux/amd64`, `linux/arm64`), built on Alpine, and runs as a
+non-root user (uid `10001`, user `ppdm`).
 
 ## Homebrew (macOS)
 

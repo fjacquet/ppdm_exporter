@@ -10,8 +10,9 @@ docker run --rm -p 9442:9442 \
 The image:
 
 - is multi-arch (`linux/amd64`, `linux/arm64`),
-- is built `FROM gcr.io/distroless/static:nonroot` and runs as **non-root**,
+- is built `FROM alpine:latest` and runs as **non-root** (uid `10001`, user `ppdm`),
 - ships with SBOM + provenance attestations (verify with `docker buildx imagetools inspect`),
+- ships a `HEALTHCHECK` that polls `http://127.0.0.1:9442/livez`,
 - defaults to `--config /etc/ppdm_exporter/config.yaml` — mount yours there.
 
 Build locally:

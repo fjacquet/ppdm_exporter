@@ -1,15 +1,16 @@
 ---
-# End-to-end demo stack — exporter + backup reporter BUILT FROM SOURCE.
-#   make demo            (brings it up detached and prints the URLs below; or: docker compose up --build)
+# End-to-end demo stack — exporter + backup reporter, exporter from the PUBLISHED
+# GHCR image.
+#   docker compose -f docker-compose.ghcr.yml up -d
 # Open:
 #   Grafana  http://localhost:3000 (admin/admin)
 #            - "PowerProtect Data Manager — Overview"  (live exporter metrics)
 #            - "PowerProtect — SLA Compliance"         (backup compliance over Postgres)
 #   Report   http://localhost:9103/report?tenant=acme-corp  (&format=pdf for PDF)
 #
-# Services: mockppdm (fake PPDM server) -> ppdm_exporter -> prometheus -> grafana, plus
-#   postgres + report (cmd/report captures history every 30s and serves the assurance report).
-# mockppdm serves demo fixtures so the dashboards/report populate without real hardware.
+# Only mockppdm and report are built locally — they are demo-only and never published.
+# Pin a version with PPDM_TAG (defaults to :latest):
+#   PPDM_TAG=3.0.0 docker compose -f docker-compose.ghcr.yml up -d
 services:
   mockppdm:
     build:
@@ -21,11 +22,7 @@ services:
     restart: unless-stopped
 
   ppdm_exporter:
-    build: .
-    image: ppdm_exporter
-    # Build-only image (no registry). Without this, `docker compose up` tries to pull
-    # `ppdm_exporter` from Docker Hub and fails with access-denied.
-    pull_policy: build
+    image: ghcr.io/fjacquet/ppdm_exporter:${PPDM_TAG:-latest}
     container_name: ppdm_exporter
     command: ["--config", "/etc/ppdm_exporter/config.yaml"]
     ports:
@@ -59,7 +56,6 @@ services:
     ports:
       - "3000:3000"
     environment:
-      # Test-stack credentials (admin / admin). Change for anything non-local.
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
       - GF_USERS_ALLOW_SIGN_UP=false
@@ -93,7 +89,7 @@ services:
     image: axllent/mailpit:latest
     container_name: ppdm_mailpit
     ports:
-      - "8025:8025"   # web UI; SMTP on 1025 is reachable in-network as mailpit:1025
+      - "8025:8025"
     restart: unless-stopped
 
   report:
@@ -105,7 +101,6 @@ services:
     container_name: ppdm_report
     command: ["--config", "/etc/report/config.report.yaml", "--debug"]
     ports:
-      # On-demand assurance report: http://localhost:9103/report?tenant=acme-corp
       - "9103:9103"
     volumes:
       - ./config.report.demo.yaml:/etc/report/config.report.yaml:ro
