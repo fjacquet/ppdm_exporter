@@ -7,7 +7,9 @@ export PPDM1_PASSWORD='...'
 ```
 
 - Metrics: <http://localhost:9442/metrics>
-- Health: <http://localhost:9442/health> (`200` when all servers are OK, `503` otherwise)
+- Health: <http://localhost:9442/health> — always `200`; read the JSON body's
+  per-server `ok`/`err` fields for status, not the HTTP status code
+- Probes: `/livez` and `/readyz` always answer `200` (no server-state dependency)
 
 Scrape it from Prometheus:
 

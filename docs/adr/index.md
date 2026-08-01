@@ -18,3 +18,4 @@ Status / Context / Decision / Consequences.
 | [0011](0011-backup-assurance-reporter.md) | Backup-assurance reporter: second binary, Postgres, assurance scope |
 | [0012](0012-report-per-tenant-authz.md) | Per-tenant authorization for `/report` |
 | [0013](0013-report-per-tenant-retention.md) | Per-tenant retention for captured history |
+| [0014](0014-health-always-200-and-static-probes.md) | `/livez`/`/readyz` static probes; `/health` always answers 200 |
