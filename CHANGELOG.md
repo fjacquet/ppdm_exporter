@@ -19,7 +19,7 @@ All notable changes to this project are documented here. The format is based on
 - `HEALTHCHECK` on both images, checking `/livez`.
 - `docker-compose.ghcr.yml` — was missing; pulls the published exporter image
   while keeping `mockppdm`/`report` built locally, matching
-  `docker-compose.yml`'s full six-service topology.
+  `docker-compose.yml`'s full seven-service topology.
 
 ## [3.0.0] - 2026-08-01
 

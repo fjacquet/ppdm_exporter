@@ -20,7 +20,7 @@ Both `Dockerfile` and `Dockerfile.goreleaser` move from
 `/livez` via `127.0.0.1` (never `localhost` — Alpine's busybox `wget` resolves
 `localhost` via `::1` first, and the exporter only binds IPv4). The
 previously-missing `docker-compose.ghcr.yml` is added at the same time,
-preserving the full six-service demo topology (postgres, mailpit, report).
+preserving the full seven-service demo topology (postgres, mailpit, report).
 
 ## Consequences
 

@@ -31,3 +31,19 @@ make demo-down       # docker compose down --remove-orphans
 
 `ppdm_up = 1`, activity/asset/alert/capacity panels populated, and the *Assets at risk*
 panel showing the one stale demo asset (`nas01`) — the bounded SLA-age logic in action.
+
+## Running from the published image
+
+`docker-compose.ghcr.yml` mirrors the same seven-service stack, but pulls
+`ppdm_exporter` from GHCR instead of building it from source (`mockppdm` and `report` are
+still built locally — they're demo-only and never published):
+
+```bash
+docker compose -f docker-compose.ghcr.yml up -d
+```
+
+Pin a version with `PPDM_TAG` (defaults to `:latest`):
+
+```bash
+PPDM_TAG=3.0.0 docker compose -f docker-compose.ghcr.yml up -d
+```
