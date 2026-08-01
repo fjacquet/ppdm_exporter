@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [3.0.0] - 2026-08-01
+
 ### Added
 
 - `/livez` and `/readyz`: probe endpoints that always answer 200, with no
