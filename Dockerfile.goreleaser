@@ -1,7 +1,7 @@
 # Release image: copies the prebuilt GoReleaser binary (no in-image compile).
 # buildx lays the cross-compiled binary out per-platform as
 # ${TARGETPLATFORM}/ppdm_exporter in the build context.
-FROM alpine:latest
+FROM docker.io/library/alpine:latest
 
 RUN apk --no-cache add ca-certificates && \
     adduser -D -u 10001 ppdm && \
