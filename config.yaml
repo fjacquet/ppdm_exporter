@@ -28,4 +28,7 @@ servers:
     # ${VAR} reference resolved at startup:
     #   insecureSkipVerify: true
     #   insecureSkipVerify: ${PPDM1_SKIP_CERTIFICATE}
-    insecureSkipVerify: true
+    # The fallback is ":-true", this repo's shipped default (PPDM ships a self-signed cert).
+    # A bare ${PPDM1_SKIP_CERTIFICATE} would abort startup when unset, and a ":-false"
+    # fallback would silently start verifying against that cert.
+    insecureSkipVerify: "${PPDM1_SKIP_CERTIFICATE:-true}"
