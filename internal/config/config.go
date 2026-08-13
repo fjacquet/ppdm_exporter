@@ -133,7 +133,11 @@ var envRef = regexp.MustCompile(`\$\{([A-Za-z_][A-Za-z0-9_]*)(:-[^}]*)?\}`)
 // docker-compose syntax and its meaning: unset OR empty falls back, and the reference
 // never errors. That lets a shipped config.yaml drive a non-secret setting from the
 // environment while still starting on a host that never exported it. Use it only where a
-// safe default exists — a bare ${VAR} keeps the fail-loud behaviour that protects secrets.
+// safe default exists.
+//
+// A bare ${VAR} fails when the variable is UNSET; an exported-but-empty one expands to
+// the empty string, as it always has. Credential fields get the stricter treatment —
+// see interpolateSecret.
 func interpolate(s string) (string, error) {
 	var missing []string
 	out := envRef.ReplaceAllStringFunc(s, func(m string) string {
@@ -157,6 +161,25 @@ func interpolate(s string) (string, error) {
 	return out, nil
 }
 
+// interpolateSecret expands like interpolate, but additionally rejects a credential that was
+// written as an env reference yet resolves to nothing. A stray `PPDM1_PASSWORD=` line in
+// a .env file is a plausible typo, and without this the exporter would authenticate with an
+// empty credential and report a failure that names the wrong cause.
+//
+// It fires only when the field actually contains a ${...} reference: a literal value is
+// passed through untouched and an omitted optional credential stays omitted, so it cannot
+// break a config that never referenced the environment in the first place.
+func interpolateSecret(field, s string) (string, error) {
+	out, err := interpolate(s)
+	if err != nil {
+		return "", err
+	}
+	if out == "" && envRef.MatchString(s) {
+		return "", fmt.Errorf("%s references %s, which resolved to an empty value", field, s)
+	}
+	return out, nil
+}
+
 // Load reads, interpolates ${ENV} references, applies defaults, and validates.
 func Load(path string) (*Config, error) {
 	raw, err := os.ReadFile(path)
@@ -169,17 +192,17 @@ func Load(path string) (*Config, error) {
 	}
 	for i := range cfg.Servers {
 		s := &cfg.Servers[i]
-		host, err := interpolate(s.Host)
+		host, err := interpolateSecret("host", s.Host)
 		if err != nil {
 			return nil, fmt.Errorf("server %s host: %w", s.Name, err)
 		}
 		s.Host = host
-		username, err := interpolate(s.Username)
+		username, err := interpolateSecret("username", s.Username)
 		if err != nil {
 			return nil, fmt.Errorf("server %s username: %w", s.Name, err)
 		}
 		s.Username = username
-		pw, err := interpolate(s.Password)
+		pw, err := interpolateSecret("password", s.Password)
 		if err != nil {
 			return nil, fmt.Errorf("server %s password: %w", s.Name, err)
 		}
