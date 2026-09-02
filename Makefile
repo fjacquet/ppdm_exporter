@@ -5,8 +5,8 @@ VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 LDFLAGS := -s -w -X main.version=$(VERSION)
 
 # Pinned tool versions (installed by `make tools`).
-GOLANGCI_VERSION    ?= v2.12.2
-GORELEASER_VERSION  ?= v2.16.0
+GOLANGCI_VERSION    ?= v2.13.2
+GORELEASER_VERSION  ?= v2.18.0
 CYCLONEDX_GOMOD_VERSION ?= latest
 
 .PHONY: all clean install tools tools-sbom lint format fmt fmt-check vet test test-race \
