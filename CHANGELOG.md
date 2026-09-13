@@ -22,6 +22,33 @@ All notable changes to this project are documented here. The format is based on
   yet still resolves to `true` — this repo's original shipped default — on a host that
   never exported the variable.
 
+## [4.2.2] - 2026-09-13
+
+### Security
+
+- `golang.org/x/crypto` 0.55.0 -> 0.57.0, fixing **GO-2026-6354** and **GO-2026-6355**
+  (`govulncheck` flagged a reachable path: `report.NewStore` -> `postgres.Run` ->
+  `ssh.NewClientConn`).
+- `google.golang.org/grpc` (indirect) 1.83.0 -> 1.83.2, fixing **GHSA-2v4p-qf9q-27wj**.
+
+### Changed
+
+- Go toolchain moved to 1.27.1; `golangci-lint` bumped to v2.13.2 and `goreleaser` to
+  v2.18.0 to match, alongside a `go get -u ./... && go mod tidy` refresh
+  (`otel` 1.45.0 -> 1.46.0, `golang.org/x/sync` 0.22.0 -> 0.23.0, `jackc/pgx/v5`
+  5.10.0 -> 5.11.0, `johnfercher/maroto/v2` 2.4.1 -> 2.4.2).
+- Dependabot auto-merge enabled for this repo, then hardened: the bot-actor guard now
+  reads `github.event.pull_request.user.login` instead of the spoofable
+  `github.actor`.
+
+### Known limitations
+
+- `github.com/moby/moby/api` and `github.com/moby/moby/client` stay pinned at
+  v1.55.0 / v0.5.1. Letting them float to v1.56.0 / v0.6.0 breaks
+  `testcontainers-go`'s Docker port lookup (`port "5432/tcp" not found`), failing
+  `TestSchedulerSendsOncePerPeriod` and `TestCaptureServerIdempotentAcrossCycles`.
+  A future dependency refresh must not silently re-bump these two modules.
+
 ## [4.0.0] - 2026-08-01
 
 ### Breaking
