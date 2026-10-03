@@ -6,21 +6,18 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
-### Added
+## [4.2.3] - 2026-10-02
 
-- `${VAR:-default}` fallbacks in config env references, ported from `pscale_exporter`.
-  Shell / docker-compose semantics: the variable falls back when unset *or* empty, and
-  such a reference never aborts startup. A bare `${VAR}` still fails loudly when the
-  variable is *unset*; an exported-but-empty one expands to the empty string, as it
-  always has.
-  Credential fields are stricter: a field written as an env reference that resolves to
-  nothing is now rejected, so a stray `PPDM1_PASSWORD=` line fails at startup instead
-  of authenticating with an empty credential. The error names only the config field:
-  config-load failures are logged, and every part of a credential field — the variable
-  name included — is potentially sensitive. The shipped `config.yaml` now uses
-  `insecureSkipVerify: "${PPDM1_SKIP_CERTIFICATE:-true}"`, so the setting is env-driven out of the box
-  yet still resolves to `true` — this repo's original shipped default — on a host that
-  never exported the variable.
+### Security
+
+- `google.golang.org/grpc` stays held at 1.83.2: v1.84.0 is affected by **GO-2026-6443**.
+
+### Changed
+
+- Dependency refresh (`go get -u ./...`): `go.opentelemetry.io/otel` family
+  1.46.0 -> 1.47.0.
+- `github.com/pdfcpu/pdfcpu` pinned at v0.15.0 because v0.16.0 breaks `maroto`.
+- Security workflow caller added (`go-security` via `fjacquet/ci`).
 
 ## [4.2.2] - 2026-09-13
 
@@ -48,6 +45,24 @@ All notable changes to this project are documented here. The format is based on
   `testcontainers-go`'s Docker port lookup (`port "5432/tcp" not found`), failing
   `TestSchedulerSendsOncePerPeriod` and `TestCaptureServerIdempotentAcrossCycles`.
   A future dependency refresh must not silently re-bump these two modules.
+
+## [4.2.0] - 2026-08-15
+
+### Added
+
+- `${VAR:-default}` fallbacks in config env references, ported from `pscale_exporter`.
+  Shell / docker-compose semantics: the variable falls back when unset *or* empty, and
+  such a reference never aborts startup. A bare `${VAR}` still fails loudly when the
+  variable is *unset*; an exported-but-empty one expands to the empty string, as it
+  always has.
+  Credential fields are stricter: a field written as an env reference that resolves to
+  nothing is now rejected, so a stray `PPDM1_PASSWORD=` line fails at startup instead
+  of authenticating with an empty credential. The error names only the config field:
+  config-load failures are logged, and every part of a credential field — the variable
+  name included — is potentially sensitive. The shipped `config.yaml` now uses
+  `insecureSkipVerify: "${PPDM1_SKIP_CERTIFICATE:-true}"`, so the setting is env-driven out of the box
+  yet still resolves to `true` — this repo's original shipped default — on a host that
+  never exported the variable.
 
 ## [4.0.0] - 2026-08-01
 
