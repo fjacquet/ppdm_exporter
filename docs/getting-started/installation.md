@@ -2,7 +2,7 @@
 
 ## From source
 
-Requires Go 1.27.1+.
+Requires Go 1.27.2+.
 
 ```bash
 git clone https://github.com/fjacquet/ppdm_exporter
