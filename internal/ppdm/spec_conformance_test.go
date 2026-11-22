@@ -234,9 +234,9 @@ func TestConformanceBitesOnRealSpec(t *testing.T) {
 	type bogus struct {
 		Name  string `json:"name"`
 		Ghost string `json:"noSuchField"`
-		Count bool   `json:"name2"`
+		Type  bool   `json:"type"`
 	}
 	if p := checkStruct(spec, schema, reflect.TypeOf(bogus{}), "bogus"); len(p) != 2 {
-		t.Errorf("want 2 problems (noSuchField, name2), got %v", p)
+		t.Errorf("want 2 problems (noSuchField, type kind), got %v", p)
 	}
 }

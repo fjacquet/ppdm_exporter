@@ -43,3 +43,21 @@ func TestAssetsCollect(t *testing.T) {
 		t.Errorf("age series assets = %v, want [nas01] only", ageAssets)
 	}
 }
+
+// 20.3.0 adds enum values (e.g. asset subtypes *_UNIFIED); the collector never switches
+// on asset type, so an unseen value must reach the label untouched (ADR-0016).
+func TestAssetsUnknownTypePassesThrough(t *testing.T) {
+	m := ppdmclient.NewMock("ppdm01")
+	m.SetJSONPrefix("/api/v2/assets", `{"page":{"number":0,"totalPages":1},"content":[
+		{"id":"n1","name":"ps01","type":"POWERSCALE_UNIFIED","protectionStatus":"PROTECTED","lastAvailableCopyTime":null}]}`)
+	got, err := Assets{AgeThreshold: time.Hour}.Collect(context.Background(), m)
+	if err != nil {
+		t.Fatalf("Collect: %v", err)
+	}
+	for _, s := range got {
+		if s.Name == "ppdm_asset_count" && s.LabelValue("type") == "POWERSCALE_UNIFIED" && s.Value == 1 {
+			return
+		}
+	}
+	t.Errorf("no ppdm_asset_count{type=POWERSCALE_UNIFIED} == 1 in %v", got)
+}
