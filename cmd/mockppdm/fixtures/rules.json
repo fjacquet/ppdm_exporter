@@ -1,0 +1,8 @@
+{
+  "page": {"number": 0, "totalPages": 1},
+  "content": [
+    {"id":"r1","name":"vm-gold","status":"ACTIVE","lastRunAt":"2026-06-04T12:00:00Z"},
+    {"id":"r2","name":"fs-never-run","status":"ACTIVE","lastRunAt":null},
+    {"id":"r3","name":"nas-new","status":"CREATING","lastRunAt":""}
+  ]
+}
