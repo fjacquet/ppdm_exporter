@@ -21,6 +21,8 @@ var conformanceRows = []struct {
 	{reflect.TypeOf(storageSystem{}), "21201-20.3.0.json", "/api/v2/storage-systems"},
 	{reflect.TypeOf(alert{}), "21201-20.3.0.json", "/api/v2/alerts"},
 	{reflect.TypeOf(healthResult{}), "21202-20.3.0.json", "/api/v3/health-results"},
+	{reflect.TypeOf(rule{}), "21202-20.3.0.json", "/api/v3/rules"},
+	{reflect.TypeOf(ruleMetric{}), "21202-20.3.0.json", "/api/v3/protection-policy-rule-metrics"},
 }
 
 var (

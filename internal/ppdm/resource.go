@@ -22,5 +22,6 @@ func Registry(lookback, assetAgeThreshold time.Duration, perJobActivities bool) 
 		Assets{AgeThreshold: assetAgeThreshold},
 		Capacity{},
 		Health{},
+		Rules{},
 	}
 }
