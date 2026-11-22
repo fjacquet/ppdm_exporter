@@ -19,7 +19,7 @@ itself rather than any one PPDM server.
 | Metric | Labels | Type | Meaning |
 |---|---|---|---|
 | `ppdm_up` | `server` | gauge | `1` if the server was reachable and authenticated this cycle, else `0`. |
-| `ppdm_collector_up` | `server`, `collector` | gauge | `1` if that domain collector (`activities`/`assets`/`capacity`/`health`) succeeded, else `0`. |
+| `ppdm_collector_up` | `server`, `collector` | gauge | `1` if that domain collector (`activities`/`assets`/`capacity`/`health`/`rules`) succeeded, else `0`. |
 
 ## Activities (jobs) — `/api/v2/activities`
 

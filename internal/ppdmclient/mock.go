@@ -29,6 +29,7 @@ func (m *Mock) SetJSON(path, body string) { m.paths[path] = body }
 func (m *Mock) SetJSONPrefix(prefix, body string) { m.prefixes = append(m.prefixes, kv{prefix, body}) }
 
 // SetNotFoundPrefix makes paths under prefix fail like a 404 (wraps ErrNotFound).
+// It takes precedence over SetJSON and SetJSONPrefix.
 func (m *Mock) SetNotFoundPrefix(prefix string) { m.notFound = append(m.notFound, prefix) }
 
 func (m *Mock) Name() string { return m.name }
