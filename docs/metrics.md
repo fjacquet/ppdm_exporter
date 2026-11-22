@@ -19,7 +19,7 @@ itself rather than any one PPDM server.
 | Metric | Labels | Type | Meaning |
 |---|---|---|---|
 | `ppdm_up` | `server` | gauge | `1` if the server was reachable and authenticated this cycle, else `0`. |
-| `ppdm_collector_up` | `server`, `collector` | gauge | `1` if that domain collector (`activities`/`assets`/`capacity`/`health`) succeeded, else `0`. |
+| `ppdm_collector_up` | `server`, `collector` | gauge | `1` if that domain collector (`activities`/`assets`/`capacity`/`health`/`rules`) succeeded, else `0`. |
 
 ## Activities (jobs) — `/api/v2/activities`
 
@@ -84,6 +84,16 @@ ppdm_asset_last_copy_age_seconds > 26*3600
 |---|---|---|---|
 | `ppdm_health_entity_status` | `server`, `entity`, `component` | gauge | `1` when the entity status is `OK`, else `0`. |
 | `ppdm_alert_count` | `server`, `severity`, `ack_state` | gauge | Open alert count by `severity` (`CRITICAL`/`WARNING`/`INFORMATIONAL`) and `ack_state` (`acknowledgement.acknowledgeState`). |
+
+## Protection rules — `/api/v3/rules`, `/api/v3/protection-policy-rule-metrics` (PPDM 20.3.0+)
+
+| Metric | Labels | Type | Meaning |
+|---|---|---|---|
+| `ppdm_rule_count` | `server`, `status` | gauge | Protection rules by `status` (`ACTIVE`/`CREATING`/`DELETING`). PPDM 20.3.0+; absent on older servers (dashboard shows N/A). |
+| `ppdm_rule_last_run_age_seconds` | `server`, `rule` | gauge | Seconds since the rule's `lastRunAt`. No series for a rule that never ran (N/A). PPDM 20.3.0+. |
+| `ppdm_rule_assigned_assets` | `server`, `policy`, `rule` | gauge | Assets assigned by a rule, per protection policy. PPDM 20.3.0+. |
+
+On PPDM < 20.3 these endpoints answer 404: the collector emits nothing and stays healthy, and the dashboard shows **N/A** (ADR-0017).
 
 ## Conventions
 

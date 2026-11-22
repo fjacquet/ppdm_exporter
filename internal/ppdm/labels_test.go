@@ -29,6 +29,8 @@ func TestLabelKeySetConsistentPerMetric(t *testing.T) {
 		{"/api/v2/storage-systems", "testdata/storage-systems.json"},
 		{"/api/v3/health-results", "testdata/health-results.json"},
 		{"/api/v2/alerts", "testdata/alerts.json"},
+		{"/api/v3/rules", "testdata/rules.json"},
+		{"/api/v3/protection-policy-rule-metrics", "testdata/protection-policy-rule-metrics.json"},
 	} {
 		body, err := os.ReadFile(f.file)
 		if err != nil {
@@ -37,7 +39,7 @@ func TestLabelKeySetConsistentPerMetric(t *testing.T) {
 		m.SetJSONPrefix(f.prefix, string(body))
 	}
 
-	collectors := []ResourceCollector{Activities{Lookback: time.Hour}, Assets{}, Capacity{}, Health{}}
+	collectors := []ResourceCollector{Activities{Lookback: time.Hour}, Assets{}, Capacity{}, Health{}, Rules{}}
 	want := map[string]string{}
 	for _, rc := range collectors {
 		samples, err := rc.Collect(context.Background(), m)

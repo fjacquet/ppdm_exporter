@@ -20,3 +20,5 @@ Status / Context / Decision / Consequences.
 | [0013](0013-report-per-tenant-retention.md) | Per-tenant retention for captured history |
 | [0014](0014-health-always-200-and-static-probes.md) | `/livez`/`/readyz` static probes; `/health` always answers 200 |
 | [0015](0015-alpine-standard.md) | Standardize container base image on Alpine |
+| [0016](0016-20.3.0-api-validation.md) | 20.3.0 API validation + spec conformance test |
+| [0017](0017-unavailable-data-is-na.md) | Unavailable data is N/A, not zero |

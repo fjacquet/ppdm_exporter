@@ -1,0 +1,7 @@
+{
+  "page": {"number": 0, "totalPages": 1},
+  "content": [
+    {"protectionPolicyName":"Gold","assignedAssetCount":12,"rule":{"id":"r1","name":"vm-gold"}},
+    {"protectionPolicyName":"Silver","assignedAssetCount":0,"rule":{"id":"r2","name":"fs-never-run"}}
+  ]
+}

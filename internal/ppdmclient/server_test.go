@@ -3,6 +3,7 @@ package ppdmclient
 import (
 	"bytes"
 	"context"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -134,5 +135,34 @@ func TestServerClientReloginOn401(t *testing.T) {
 	}
 	if logins != 2 {
 		t.Fatalf("logins = %d, want 2 (initial + relogin)", logins)
+	}
+}
+
+func TestGetNotFoundIsErrNotFound(t *testing.T) {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/api/v2/login", func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		writeBytes(w, []byte(`{"access_token":"t","token_type":"Bearer","expires_in":1800}`))
+	})
+	mux.HandleFunc("/api/v2/boom", func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusBadRequest) })
+	srv := httptest.NewTLSServer(mux) // unregistered paths answer 404
+	defer srv.Close()
+	c := NewServerClient(Config{Name: "ppdm01", BaseURL: srv.URL, HTTPClient: srv.Client()})
+	defer func() { _ = c.Close() }()
+
+	var out map[string]any
+	if err := c.Get(context.Background(), "/api/v3/rules", &out); !errors.Is(err, ErrNotFound) {
+		t.Errorf("404: err = %v, want errors.Is ErrNotFound", err)
+	}
+	if err := c.Get(context.Background(), "/api/v2/boom", &out); err == nil || errors.Is(err, ErrNotFound) {
+		t.Errorf("400: err = %v, want non-ErrNotFound error", err)
+	}
+}
+
+func TestGetAllPropagatesErrNotFound(t *testing.T) {
+	m := NewMock("ppdm01")
+	m.SetNotFoundPrefix("/x")
+	if _, err := GetAll[struct{}](context.Background(), m, "/x", 10); !errors.Is(err, ErrNotFound) {
+		t.Errorf("err = %v, want errors.Is ErrNotFound", err)
 	}
 }

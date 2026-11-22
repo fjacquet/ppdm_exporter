@@ -3,6 +3,7 @@ package ppdmclient
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"net/http"
 	"sync"
@@ -78,6 +79,9 @@ func NewServerClient(cfg Config) *ServerClient {
 
 func (c *ServerClient) Name() string { return c.cfg.Name }
 
+// ErrNotFound marks a 404 response: the endpoint does not exist on this PPDM version.
+var ErrNotFound = errors.New("not found")
+
 // Get fetches path, authenticating first and re-authenticating once on 401.
 func (c *ServerClient) Get(ctx context.Context, path string, out any) error {
 	if err := c.ensureToken(ctx); err != nil {
@@ -95,6 +99,9 @@ func (c *ServerClient) Get(ctx context.Context, path string, out any) error {
 		if resp, err = c.do(ctx, path, out); err != nil {
 			return err
 		}
+	}
+	if resp.StatusCode() == http.StatusNotFound {
+		return fmt.Errorf("GET %s: status 404: %w", path, ErrNotFound)
 	}
 	if resp.StatusCode() >= 300 {
 		return fmt.Errorf("GET %s: status %d", path, resp.StatusCode())

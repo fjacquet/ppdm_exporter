@@ -196,6 +196,33 @@
       "gridPos": {"h": 8, "w": 8, "x": 16, "y": 32},
       "fieldConfig": {"defaults": {"custom": {"drawStyle": "line", "fillOpacity": 25, "stacking": {"mode": "normal"}}}, "overrides": [{"matcher": {"id": "byName", "options": "CRITICAL"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "red"}}]}, {"matcher": {"id": "byName", "options": "WARNING"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "orange"}}]}]},
       "targets": [{"refId": "A", "expr": "sum by (severity) (ppdm_alert_count{server=~\"$server\"})", "legendFormat": "{{severity}}"}]
+    },
+    {
+      "id": 500, "type": "row", "title": "Protection rules", "collapsed": false,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 40}, "panels": []
+    },
+    {
+      "id": 51, "type": "stat", "title": "Rules by status",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 41},
+      "fieldConfig": {"defaults": {"noValue": "N/A"}, "overrides": []},
+      "targets": [{"refId": "A", "expr": "sum by (status) (ppdm_rule_count{server=~\"$server\"})", "legendFormat": "{{status}}", "instant": true}]
+    },
+    {
+      "id": 52, "type": "table", "title": "Rules — last run age",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 41},
+      "options": {"showHeader": true},
+      "fieldConfig": {"defaults": {"noValue": "N/A", "unit": "s"}, "overrides": []},
+      "targets": [{"refId": "A", "expr": "max by (rule) (ppdm_rule_last_run_age_seconds{server=~\"$server\"})", "format": "table", "instant": true}]
+    },
+    {
+      "id": 53, "type": "bargauge", "title": "Assets per rule",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 41},
+      "options": {"orientation": "horizontal", "displayMode": "gradient"},
+      "fieldConfig": {"defaults": {"noValue": "N/A"}, "overrides": []},
+      "targets": [{"refId": "A", "expr": "sum by (rule) (ppdm_rule_assigned_assets{server=~\"$server\"})", "legendFormat": "{{rule}}", "instant": true}]
     }
   ]
 }
