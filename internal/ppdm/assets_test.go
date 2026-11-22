@@ -44,8 +44,8 @@ func TestAssetsCollect(t *testing.T) {
 	}
 }
 
-// 20.3.0 adds enum values (e.g. asset subtypes *_UNIFIED); the collector never switches
-// on asset type, so an unseen value must reach the label untouched (ADR-0016).
+// 20.3.0 adds enum values; the collector never switches on asset type, so an unseen
+// type value must reach the label untouched (ADR-0016).
 func TestAssetsUnknownTypePassesThrough(t *testing.T) {
 	m := ppdmclient.NewMock("ppdm01")
 	m.SetJSONPrefix("/api/v2/assets", `{"page":{"number":0,"totalPages":1},"content":[
