@@ -6,10 +6,17 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [4.3.0] - 2026-11-22
+
 ### Added
 
 - Protection-rule metrics for PPDM 20.3.0+: `ppdm_rule_count`, `ppdm_rule_last_run_age_seconds`, `ppdm_rule_assigned_assets`, a "Protection rules" dashboard row, and `mockppdm` fixtures. On older PPDM (404) the collector emits nothing and the panels show N/A (ADR-0017).
 - `ppdmclient.ErrNotFound` for 404 responses; conformance test of the collector structs against the vendored 20.3.0 OpenAPI specs (ADR-0016).
+
+### Changed
+
+- Dependency refresh (`go get -u ./...`): `google.golang.org/grpc` 1.84.0 -> 1.85.0, `github.com/prometheus/common` 0.72.1 -> 0.74.0, `golang.org/x/{crypto,net,sys,text}`, `pdfcpu` 0.16.3 -> 0.16.4, `moby` client/api; `govulncheck` reports no vulnerabilities.
+- Drop the generic RTK block from `CLAUDE.md`.
 
 ### Security
 
