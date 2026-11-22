@@ -15,6 +15,7 @@ type Mock struct {
 	name     string
 	paths    map[string]string // exact-path match
 	prefixes []kv              // path-prefix match (ignores query string)
+	notFound []string          // path prefixes answered with ErrNotFound
 }
 
 // NewMock returns an empty Mock for the named server.
@@ -27,9 +28,17 @@ func (m *Mock) SetJSON(path, body string) { m.paths[path] = body }
 // so paginated calls like "/api/v2/assets?page=0&pageSize=500" resolve to one body.
 func (m *Mock) SetJSONPrefix(prefix, body string) { m.prefixes = append(m.prefixes, kv{prefix, body}) }
 
+// SetNotFoundPrefix makes paths under prefix fail like a 404 (wraps ErrNotFound).
+func (m *Mock) SetNotFoundPrefix(prefix string) { m.notFound = append(m.notFound, prefix) }
+
 func (m *Mock) Name() string { return m.name }
 
 func (m *Mock) Get(_ context.Context, path string, out any) error {
+	for _, p := range m.notFound {
+		if strings.HasPrefix(path, p) {
+			return fmt.Errorf("mock GET %s: %w", path, ErrNotFound)
+		}
+	}
 	if body, ok := m.paths[path]; ok {
 		return json.Unmarshal([]byte(body), out)
 	}
